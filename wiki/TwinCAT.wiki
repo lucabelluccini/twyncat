@@ -11,8 +11,8 @@ Composed of *operators* and *operands*.
 An *operand* can be:
   * A constant
   * A variable
-  * A Function Call
-  * An Expression
+  * A function Call
+  * An expression
 
 {{{
 expression = ( constant | variable | functioncall ),
@@ -31,11 +31,3 @@ Binding strength in expressions:
   # Boolean AND `AND`
   # Boolean XOR `XOR`
   # Boolean OR `OR`
-
-
-
-
-Add your content here.  Format your content with:
-  * Text in *bold* or _italic_
-  * Headings, paragraphs, and lists
-  * Automatic links to other wiki pages
