@@ -35,35 +35,64 @@ Binding strength in expressions:
 == Instructions ==
 
 There are several kind of instructions:
-  * Assignment {{{A:=B; CV := CV + 1; C:=SIN(X);}}}
-  * Calling a function block and use of the FB version {{{CMD_TMR(IN := %IX5, PT := 300);
-A:=CMD_TMR.Q;}}}
-  * Return from function {{{RETURN;}}}
-  * If statement {{{IF D<0.0  
+  * Assignment 
+{{{
+A:=B; CV := CV + 1; C:=SIN(X);
+}}}
+  * Calling a function block and use of the FB version 
+{{{
+CMD_TMR(IN := %IX5, PT := 300);
+A:=CMD_TMR.Q;
+}}}
+  * Return from function 
+{{{
+RETURN;
+}}}
+  * If statement 
+{{{
+IF D<0.0  
 THEN C:=A;
 ELSIF D=0.0 
 THEN C:=B;
 ELSE C:=D;
-END_IF;}}}
-  * Case statement {{{CASE INT1 OF 
+END_IF;
+}}}
+  * Case statement
+{{{
+CASE INT1 OF 
 1: BOOL1 := TRUE;
 2: BOOL2 := TRUE;
 ELSE 
 BOOL1 := FALSE; 
 BOOL2 := FALSE;
-END_CASE;}}}
-  * For statement {{{FOR I:=1 TO 100 BY 2 DO  
+END_CASE;
+}}}
+  * For statement 
+{{{
+FOR I:=1 TO 100 BY 2 DO  
    IF ARR[I] = 70 
       THEN J:=I; 
       EXIT; 
    END_IF;
-END_FOR;}}}
-  * While statement {{{WHILE J<= 100 AND ARR[J] <> 70 DO  
+END_FOR;
+}}}
+  * While statement 
+{{{
+WHILE J<= 100 AND ARR[J] <> 70 DO  
    J:=J+2;
-END_WHILE;}}}
-  * Repeat Until statement {{{REPEAT J:=J+2; 
+END_WHILE;
+}}}
+  * Repeat Until statement 
+{{{
+REPEAT J:=J+2; 
 UNTIL J= 101 OR ARR[J] = 70
-END_REPEAT;}}}
-  * Exit statement {{{EXIT EXIT;}}}
-  * Empty instruction {{{;}}}
-
+END_REPEAT;
+}}}
+  * Exit statement 
+{{{
+EXIT;
+}}}
+  * Empty instruction 
+{{{
+;
+}}}
