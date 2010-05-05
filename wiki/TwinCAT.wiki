@@ -1,0 +1,24 @@
+#summary TwinCAT ST Specs and Language Description
+
+= TwinCAT ST (Structured Text) Language =
+
+The structured text consists of a series of instructions which, as determined in high level languages, ("IF..THEN..ELSE") or in loops (WHILE..DO) can be executed.
+
+== Expressions ==
+
+Construction returning a value after its evaluation.
+Composed of *operators* and *operands*.
+An *operand* can be:
+  * A constant
+  * A variable
+  * A Function Call
+  * An Expression
+
+{{{
+expression = operand
+}}}
+
+Add your content here.  Format your content with:
+  * Text in *bold* or _italic_
+  * Headings, paragraphs, and lists
+  * Automatic links to other wiki pages
