@@ -19,6 +19,22 @@ expression = ( constant | variable | functioncall ),
              ( constant | variable | functioncall ) operator expression;
 }}}
 
+Binding strength in expressions:
+  # Parentheses `(expression)`
+  # Function call `Function name (parameter list)`
+  # Exponentiation `EXPT`
+  # Negate `NOT`
+  # Multiply,Divide,Modulo `*,/,MOD`
+  # Add,Subtract `+,-`
+  # Compare `<,>,<=,>=`
+  # Equal to,Not Equal to  `=,<>`
+  # Boolean AND `AND`
+  # Boolean XOR `XOR`
+  # Boolean OR `OR`
+
+
+
+
 Add your content here.  Format your content with:
   * Text in *bold* or _italic_
   * Headings, paragraphs, and lists
