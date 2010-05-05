@@ -15,7 +15,8 @@ An *operand* can be:
   * An Expression
 
 {{{
-expression = operand
+expression = ( constant | variable | functioncall ),
+             ( constant | variable | functioncall ) operator expression;
 }}}
 
 Add your content here.  Format your content with:
