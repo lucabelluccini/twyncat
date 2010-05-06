@@ -12,4 +12,6 @@ It also implements structures such as lists, tuples, and sets.
 There are some Python usage examples and more details in the following links
   * [http://codesyntax.netfirms.com/lang-python.htm CodeSyntax]
   * [http://en.wikipedia.org/wiki/Python_(programming_language) Wikipedia]
-  * [http://www.python.org/ Python Website ]
+  * [http://www.python.org/ Python Website]
+  * [http://en.wikipedia.org/wiki/Python_syntax_and_semantics]
+  * [http://rigaux.org/language-study/syntax-across-languages-per-language/Python.html rigaux]
