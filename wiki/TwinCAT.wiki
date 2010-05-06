@@ -297,12 +297,11 @@ It is possible to define a:
   * FUNCTION_BLOCK functionblockname
   * PROGRAM programname
 
-Each one of these blocks must define:
-  * A variable section, on top, declaring:
-  ** VAR_INPUT [...] END_VAR
-  ** VAR_OUTPUT [...] END_VAR
-  ** VAR_IN_OUT [...] END_VAR
-  ** VAR [...] END_VAR
+On the top of each one of these blocks there's the variable section. They can be:
+  * VAR_INPUT [...] END_VAR
+  * VAR_OUTPUT [...] END_VAR
+  * VAR_IN_OUT [...] END_VAR
+  * VAR [...] END_VAR
 
 Global variables, global network variables (VAR_GLOBAL), and variable configurations (VAR_CONFIG) must be defined in separate objects.
 Variable sections can have a modifier such as RETAIN, PERSISTENT, CONSTANT.
