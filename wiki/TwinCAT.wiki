@@ -197,88 +197,88 @@ Where:
 == TwinCAT PLC Library and Operators==
 
 {{{
-'							String delimiters (e.g. 'string1') 
-[..]						Size of Array range (e.g. ARRAY[0..3] OF INT)  
-:							Delimiter between Operand and Typ in a declaration (e.g. var1 : INT;)  
-;							Termination of instruction (e.g. a:=var1;)  
-^							Derefereced Pointer (e.g. pointer1^) 
-:=							ST var1 N Store actual result to var1 
-<Programmname> 				Call program prog1 
-<Instanzname>				Call function block instance inst1 
-<Fktname>(vx,vy,..)			Call function fctname and transmit variables vx, vy  
-RETURN						Leave POU and go back to caller 
-(							The value following the bracket is handled as operand, the operation before the bracket is not executed before the expression in the brackets.  
-)							Now execute the operation which has been set back  
-AND							Bitwise AND 
-OR							Bitwise  OR 
-XOR							Bitwise  exclusive OR 
-NOT							Bitwise  NOT 
-+ 							Addition 
-- 							Subtraction 
-*							Multiplication 
-/							Division 
->							Greater than 
->=							Greater or equal 
-=							Equal 
-<							Less than 
-<>							Not equal 
-<=							Less or equal 
-in1 MOD in2					Modulo Division 
-INDEXOF(in)					Internal index of POU in1; [INT] 
-SIZEOF(in) 					Number of bytes required for the given data type of in  
-SHL(in,K)					Bitwise left-shift of operator in by K 
-SHR(in,K)					Bitwise right-shift of operator in by K 
-ROL(in,K)					Bitwise rotation to the left of operator in by K  
-ROR(in,K)					Bitwise rotation to the right of operator in by K  
-SEL(G,in0,in1)				Binary selection between 2 operands in0 (G is FALSE) and in1 (G is TRUE)  
-MAX(in0,in1)				Returns the greater of 2 values 
-MIN(in0,in1)				Returns the lesser of 2 values in0 and in1  
-LIMIT(Min,in,Max)			Limits the value range (in is set back to MIN or MAX in case of exceeding the range) 
-MUX(K, in0,.. in_n)			Selects the Kth value out of a group of values (in0 to In_n)  
-ADR(in)						Address of the operand in [DWORD]  
-BOOL_TO_<type>(in)			Type conversion of the boolean operand  
-<type>_TO_BOOL(in)			Type conversion to BOOL 
-INT_TO_<type>(in)			Type conversion of an INT Operand to another elementary type  
-REAL_TO_<type>(in)			Type conversion of an REAL operand to another elementary type  
-LREAL_TO_<type>(in)			Type conversion of a LREAL operand to another elementary type  
-TIME_TO_<type>(in)			Type conversion of a TIME operand to another elementary type  
-TOD_TO_<type>(in)			Type conversion of a TOD operand to another elementary type  
-DATE_TO_<type>(in)			Type conversion of a DATE operand to another elementary type  
-DT_TO_<type>(in)			Type conversion of a DT operand to another elementary type  
-STRING_TO_<type>(in)		Type conversion of a STRING operand to another elementary type  
-TRUNC(in)					Conversion from REAL to INT 
-ABS(in)						Absolute value of operand in 
-SQRT(in)					Square root of operand in 
-LN(in)						Natural logarithm of operand in 
-LOG(in)						Logarithm of operand in, base 10 
-EXP(in)						Exponential function of operand in 
-SIN(in)						Sine of operand in 
-COS(IN)						Cosine of operand in 
-TAN(in)						Tangent of operand in 
-ASIN(in)					Arc sine of operand in 
-ACOS(in)					Arc cosine of operand in 
-ATAN(in)					Arc tangent of operand in 
-EXPT(in,expt)				Exponentation of operand in with expt  
-LEN(in)						String length of operand in 
-LEFT(str, size)				Left inital string of given size of string str standard.lib 
-RIGHT(str, size)			Right initial string of given size of string str standard.lib 
-MID(str, len, pos)			Partial string of str of given length 
-CONCAT(str1, str2)			Concatenation of two subsequent strings standard.lib 
-INSERT(str1, str2, pos)		Insert string str1 in String str2 at position pos standard.lib 
-DELETE(str1, len, pos)		Delete partial string (length len), start at position pos of str1 standard.lib 
-REPLACE(str1,str2,len,pos)	Replace partial string of lenght len by str2, start at position pos of str1  
-FIND(str1, str2)			Search for partial string str2 in str1 
-SR							Bistable FB is set dominant 
-RS							Bistable FB is set back 
-SEMA						FB: Software Semaphor (interruptable) 
-R_TRIG						FB: rising edge is detected 
-F_TRIG						FB: falling edge is detected 
-CTU							FB: Counts up 
-CTD							FB: Counts down 
-CTUD						FB: Counts up and down 
-TP							FB: trigger 
-TON							FB: on-delay timer 
-TOF							FB: off-delay timer 
+'				String delimiters (e.g. 'string1') 
+[..]				Size of Array range (e.g. ARRAY[0..3] OF INT)  
+:				Delimiter between Operand and Typ in a declaration
+;				Termination of instruction (e.g. a:=var1;)  
+^				Derefereced Pointer (e.g. pointer1^) 
+:=				ST var1 N Store actual result to var1 
+<Programmname> 			Call program prog1 
+<Instanzname>			Call function block instance inst1 
+<Fktname>(vx,vy,..)		Call function fctname and transmit variables vx, vy  
+RETURN				Leave POU and go back to caller 
+(				The value following the bracket is handled as operand, the operation before the bracket is not executed before the expression in the brackets.  
+)				Now execute the operation which has been set back  
+AND				Bitwise AND 
+OR				Bitwise  OR 
+XOR				Bitwise  exclusive OR 
+NOT				Bitwise  NOT 
++ 				Addition 
+- 				Subtraction 
+*				Multiplication 
+/				Division 
+>				Greater than 
+>=				Greater or equal 
+=				Equal 
+<				Less than 
+<>				Not equal 
+<=				Less or equal 
+in1 MOD in2			Modulo Division 
+INDEXOF(in)			Internal index of POU in1; [INT] 
+SIZEOF(in) 			Number of bytes required for the given data type of in  
+SHL(in,K)			Bitwise left-shift of operator in by K 
+SHR(in,K)			Bitwise right-shift of operator in by K 
+ROL(in,K)			Bitwise rotation to the left of operator in by K  
+ROR(in,K)			Bitwise rotation to the right of operator in by K  
+SEL(G,in0,in1)			Binary selection between 2 operands in0 (G is FALSE) and in1 (G is TRUE)  
+MAX(in0,in1)			Returns the greater of 2 values 
+MIN(in0,in1)			Returns the lesser of 2 values in0 and in1  
+LIMIT(Min,in,Max)		Limits the value range
+MUX(K, in0,.. in_n)		Selects the Kth value out of a group of values
+ADR(in)				Address of the operand in [DWORD]  
+BOOL_TO_<type>(in)		Type conv. of the boolean operand  
+<type>_TO_BOOL(in)		Type conv. to BOOL 
+INT_TO_<type>(in)		Type conv. of an INT Operand to another elementary type  
+REAL_TO_<type>(in)		Type conv. of an REAL operand to another elementary type  
+LREAL_TO_<type>(in)		Type conv. of a LREAL operand to another elementary type  
+TIME_TO_<type>(in)		Type conv. of a TIME operand to another elementary type  
+TOD_TO_<type>(in)		Type conv. of a TOD operand to another elementary type  
+DATE_TO_<type>(in)		Type conv. of a DATE operand to another elementary type  
+DT_TO_<type>(in)		Type conv. of a DT operand to another elementary type  
+STRING_TO_<type>(in)		Type conv. of a STRING operand to another elementary type  
+TRUNC(in)			Conversion from REAL to INT 
+ABS(in)				Absolute value of operand in 
+SQRT(in)			Square root of operand in 
+LN(in)				Natural logarithm of operand in 
+LOG(in)				Logarithm of operand in, base 10 
+EXP(in)				Exponential function of operand in 
+SIN(in)				Sine of operand in 
+COS(IN)				Cosine of operand in 
+TAN(in)				Tangent of operand in 
+ASIN(in)			Arc sine of operand in 
+ACOS(in)			Arc cosine of operand in 
+ATAN(in)			Arc tangent of operand in 
+EXPT(in,expt)			Exponentation of operand in with expt  
+LEN(in)				String length of operand in 
+LEFT(str, size)			Left inital string of given size of string str 
+RIGHT(str, size)		Right initial string of given size of string str 
+MID(str, len, pos)		Partial string of str of given length 
+CONCAT(str1, str2)		Concatenation of two subsequent strings standard.lib 
+INSERT(str1, str2, pos)		Insert string str1 in String str2 at position pos 
+DELETE(str1, len, pos)		Delete partial string (length len), start at pos of str1
+REPLACE(str1,str2,len,pos)	Repl. partial string of len by str2, start at pos of str1  
+FIND(str1, str2)		Search for partial string str2 in str1 
+SR				Bistable FB is set dominant 
+RS				Bistable FB is set back 
+SEMA				FB: Software Semaphor (interruptable) 
+R_TRIG				FB: rising edge is detected 
+F_TRIG				FB: falling edge is detected 
+CTU				FB: Counts up 
+CTD				FB: Counts down 
+CTUD				FB: Counts up and down 
+TP				FB: trigger 
+TON				FB: on-delay timer 
+TOF				FB: off-delay timer 
 }}}
 
 === System Functions ===
@@ -290,8 +290,6 @@ TOF							FB: off-delay timer
   * CheckDivDWord
   * CheckRangeSigned
   * CheckRangeUnsigned
-
-
 
 
 
