@@ -1,0 +1,50 @@
+#summary Proposed language structure
+
+= Introduction =
+
+In this page we are proposing some examples and features of TwynCAT.
+
+= Details =
+
+{{{
+prog get1channelFast:
+       t_DCTIME diff1[1..250000], diff2[1..250000], diff3[1..250000], diff4[1:250000], diff5[1:16000]
+       t_DCTIME BufferLatchPosEL1252ACh1
+       udint cnt = 0
+       udint nexp = 1016000
+       udint array_num = 0
+       bool first = True
+       bool different
+       udint skip = 1000
+       # Inizializzazione
+       if skip != 0:
+              BufferLatchPosEL1252ACh1 = LatchPosEL1252ACh1
+              skip = skip - 1
+       else:
+              # Cerco se il timestamping e' differente dal precedente
+              # Non serve testare la parte alta se il periodo e' inferiore a 4 secondi
+              if (LatchPosEL1252ACh1.dwLowPart != BufferLatchPosEL1252ACh1.dwLowPart):
+                     different = True
+              else:
+                     different = False
+              if cnt < nexp+1:
+                     if different:
+                            case array_num
+                                   0: 
+                                          diff1[cnt] = LatchPosEL1252ACh1;
+                                   1:
+                                          diff2[cnt-250000] = LatchPosEL1252ACh1;
+                                   2:
+                                          diff3[cnt-500000] = LatchPosEL1252ACh1;
+                                   3:
+                                          diff4[cnt-750000] = LatchPosEL1252ACh1;
+                                   4:
+                                          diff5[cnt-1000000] = LatchPosEL1252ACh1;
+                                   default:
+                            array_num = cnt / 250000
+                            cnt = cnt + 1
+
+              # Tengo traccia di quando e' stato fatto il vecchio cambiamento di fronte
+              if different:
+                     BufferLatchPosEL1252ACh1 := LatchPosEL1252ACh1
+}}}
