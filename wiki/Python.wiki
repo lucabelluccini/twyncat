@@ -1,0 +1,15 @@
+#summary A little excursus on Python
+
+= Introduction =
+
+Python is a high-level programming language whose design philosophy emphasizes code readability.
+Its use of indentation for block delimiters is unusual among popular programming languages.
+Python is strongly typed, no non explicit conversion are made.
+It also implements structures such as lists, tuples, and sets.
+
+= Details on syntax =
+
+There are some Python usage examples and more details in the following links
+  * [CodeSyntax http://codesyntax.netfirms.com/lang-python.htm]
+  * [Wikipedia http://en.wikipedia.org/wiki/Python_(programming_language)]
+  * [Python Website http://www.python.org/]
