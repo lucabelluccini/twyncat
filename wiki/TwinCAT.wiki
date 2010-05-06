@@ -120,10 +120,27 @@ There are 2 groups of data types:
   * REAL {~ -3.402823 x 10^38 to ~ 3.402823 x 1038}
   * LREAL {~ -1.79769313486231E308 to ~ 1.79769313486232E308}
   * STRING {(dim) 'This is a String';}
-  * TIME {T#0ms to T#71582m47s295ms}
-  * TIME_OF_DAY (TOD) {TOD#00:00 to TOD#1193:02:47.295}
-  * DATE {D#1970-01-01 to D#2106-02-06}
+  * TIME {T#0ms to T#71582m47s295ms} - T#9d8h7m6s5ms
+  * TIME_OF_DAY (TOD) {TOD#00:00 to TOD#1193:02:47.295} - TOD#00:00:00.001
+  * DATE {D#1970-01-01 to D#2106-02-06} - D#1972-03-29
   * DATE_AND_TIME (DT) {DT#1970-01-01-00:00 to DT#2106-02-06-06:28:15}
+
+A little example about constants:
+  * 14 (Decimal Number)
+  * 2#1001_0011 (Binary Number)
+  * 8#67 (Octal Number)
+  * 16#A (Hexadecimal Number)
+  * 7.4 instead of 7,4
+  * 1.64e+009 instead of 1,64e+009
+  * $$ Dollar signs 
+  * $' Single quotation mark 
+  * $L or $l Line feed 
+  * $N or $n  New line 
+  * $P or $p  Page feed 
+  * $R or $r  Line break 
+  * $T or $t Tab 
+
+In variables defined as SINT, INT, DINT, USINT, UINT, UDINT, BYTE, WORD, DWORD, a single bit can be addressed using dot notation. Not for VAR_IN_OUT variables.
 
 === User Defined Data Types ===
 
