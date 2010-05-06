@@ -8,13 +8,9 @@ In this page we are proposing some examples and features of TwynCAT.
 
 {{{
 prog get1channelFast:
-       t_DCTIME diff1[1..250000], diff2[1..250000], diff3[1..250000], diff4[1:250000], diff5[1:16000]
+       T_DCTIME diff1[1..250000], diff2[1..250000], diff3[1..250000], diff4[1:250000], diff5[1:16000]
        t_DCTIME BufferLatchPosEL1252ACh1
-       udint cnt = 0
-       udint nexp = 1016000
-       udint array_num = 0
-       bool first = True
-       bool different
+       bool first = True, different
        udint skip = 1000
        # Inizializzazione
        if skip != 0:
@@ -27,9 +23,10 @@ prog get1channelFast:
                      different = True
               else:
                      different = False
+              udint cnt = 0, nexp = 1016000, array_num = 0
               if cnt < (nexp + 1):
                      if different:
-                            case array_num
+                            case array_num:
                                    0: 
                                           diff1[cnt] = LatchPosEL1252ACh1;
                                    1:
@@ -47,4 +44,35 @@ prog get1channelFast:
               # Tengo traccia di quando e' stato fatto il vecchio cambiamento di fronte
               if different:
                      BufferLatchPosEL1252ACh1 = LatchPosEL1252ACh1
+}}}
+
+== Data declarations ==
+
+Can be declared within instructions.
+Variables must be already declared or just declared at first usage.
+
+=== Standard Data Types declaration and arrays ===
+{{{
+{in | out | inout}? <sdt> <variable name> # variable
+{in | out | inout}? <sdt> <variable name>[<lower limit>:<up limit>] # 1-dim array
+}}}
+
+=== Enumerations ===
+{{{
+enum <enumeration name>: {enum { = <initialization> }? }+
+}}}
+
+=== Pointers ===
+{{{
+pointer {<data type> | <function block name>} <pointer name>
+}}}
+
+=== Aliases ===
+{{{
+alias <alias> <assignment term>
+}}}
+
+=== Subranges ===
+{{{
+subrange <sdt> <subrange name> <lower limit>:<up limit>
 }}}
