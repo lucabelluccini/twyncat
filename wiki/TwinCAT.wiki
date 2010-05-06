@@ -185,14 +185,14 @@ Individual memory locations can be displayed using the following syntax:
 %{I,Q,M}{X,B,W,D,*}{location}
 }}}
 Where:
-  * I: Input
-  * Q: Output
-  * M: Memory Location
-  * X: Single Bit - %QX75.1  (*Bit 1 of output byte 75*)
-  * B: Byte - %QB7 (*Output byte 7*)
-  * W: Word - %IW215 (*Input word 215*)
-  * D: Double Word - %MD48 (*Double word in memory position 48 in the memory location*)
-  * *: Config Variable
+  * `I: Input`
+  * `Q: Output`
+  * `M: Memory Location`
+  * `X: Single Bit - %QX75.1  (*Bit 1 of output byte 75*)`
+  * `B: Byte - %QB7 (*Output byte 7*)`
+  * `W: Word - %IW215 (*Input word 215*)`
+  * `D: Double Word - %MD48 (*Double word in memory position 48 in the memory location*)`
+  * `*: Config Variable`
 
 == TwinCAT PLC Library and Operators==
 
@@ -294,14 +294,14 @@ TOF				FB: off-delay timer
 == Program Blocks ==
 
 It is possible to define a:
-  * FUNCTION_BLOCK functionblockname
-  * PROGRAM programname
+  * `FUNCTION_BLOCK functionblockname`
+  * `PROGRAM programname`
 
 On the top of each one of these blocks there's the variable section. They can be:
-  * VAR_INPUT [...] END_VAR
-  * VAR_OUTPUT [...] END_VAR
-  * VAR_IN_OUT [...] END_VAR
-  * VAR [...] END_VAR
+  * `VAR_INPUT [...] END_VAR`
+  * `VAR_OUTPUT [...] END_VAR`
+  * `VAR_IN_OUT [...] END_VAR`
+  * `VAR [...] END_VAR`
 
 Global variables, global network variables (VAR_GLOBAL), and variable configurations (VAR_CONFIG) must be defined in separate objects.
 Variable sections can have a modifier such as RETAIN, PERSISTENT, CONSTANT.
