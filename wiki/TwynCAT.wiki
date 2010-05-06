@@ -27,7 +27,7 @@ prog get1channelFast:
                      different = True
               else:
                      different = False
-              if cnt < nexp+1:
+              if cnt < (nexp + 1):
                      if different:
                             case array_num
                                    0: 
@@ -46,5 +46,5 @@ prog get1channelFast:
 
               # Tengo traccia di quando e' stato fatto il vecchio cambiamento di fronte
               if different:
-                     BufferLatchPosEL1252ACh1 := LatchPosEL1252ACh1
+                     BufferLatchPosEL1252ACh1 = LatchPosEL1252ACh1
 }}}
