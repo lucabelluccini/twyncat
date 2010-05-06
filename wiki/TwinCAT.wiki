@@ -139,7 +139,7 @@ There are 2 groups of data types:
 {{{
 TYPE <Identifier>:(<Enum_0> ,<Enum_1>, ...,<Enum_n> *<assign>);END_TYPE
 }}}
-  * STRUCT (referenced using <Structurename>.<Componentname>)
+  * STRUCT (referenced using Structurename.Componentname)
 {{{
 TYPE <Structurename>:
 STRUCT 
