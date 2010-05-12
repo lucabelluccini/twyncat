@@ -51,10 +51,11 @@ prog get1channelFast:
 Can be declared within instructions.
 Variables must be already declared or just declared at first usage.
 
-=== Standard Data Types declaration and arrays ===
+=== Declaration and arrays ===
 {{{
-{in | out | inout}? <sdt> <variable name> # variable
+{in | out | inout}? {<sdt> | <udt> } <variable name> # variable
 {in | out | inout}? <sdt> <variable name>[<lower limit>:<up limit>] # 1-dim array
+{in | out | inout}? {retain | persistent | constant} <sdt> <variable name>
 }}}
 
 === Enumerations ===
@@ -80,6 +81,15 @@ subrange <sdt> <subrange name> <lower limit>:<up limit>
 === Range (arrays) ===
 {{{
 [<lower limit>:<up limit>]
+}}}
+
+=== User Data Types ===
+{{{
+structure <structure name>:
+    <Declaration of Variable 1> 
+    . 
+    . 
+    <Declaration of Variable n>
 }}}
 
 === Constants ===
