@@ -8,7 +8,7 @@ In this page we are proposing some examples and features of TwynCAT.
 
 {{{
 prog get1channelFast:
-       T_DCTIME diff1[1..250000], diff2[1..250000], diff3[1..250000], diff4[1:250000], diff5[1:16000]
+       T_DCTIME diff1[1:250000], diff2[1:250000], diff3[1:250000], diff4[1:250000], diff5[1:16000]
        t_DCTIME BufferLatchPosEL1252ACh1
        bool first = True, different
        udint skip = 1000
@@ -79,5 +79,28 @@ subrange <sdt> <subrange name> <lower limit>:<up limit>
 
 === Range (arrays) ===
 {{{
-[<lower limit>..<up limit>]
+[<lower limit>:<up limit>]
+}}}
+
+=== Constants ===
+{{{
+True                    # Boolean True
+False                   # Boolean False
+14                      # Decimal Number
+7.4                     # Decimal Number
+1.64e+009               # Decimal Number
+bin!10010011            # Binary Number
+oct!67                  # Octal Number
+hex!1AF6                # Hexadecimal Number
+\$                      # Dollar signs
+\'                      # Single quotation mark
+\l                      # Line feed
+\n                      # New line
+\p                      # Page feed
+\r                      # Line break
+\t                      # Tab
+time!1d23h59m59s999ms   # Time
+tod!99:98:97.654        # Time of Day
+date!2012-02-06         # Date
+dt!1986-08-05-10:30     # Date and Time
 }}}
