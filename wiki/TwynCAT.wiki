@@ -89,9 +89,9 @@ False                   # Boolean False
 14                      # Decimal Number
 7.4                     # Decimal Number
 1.64e+009               # Decimal Number
-bin!10010011            # Binary Number
-oct!67                  # Octal Number
-hex!1AF6                # Hexadecimal Number
+b!10010011              # Binary Number
+o!67                    # Octal Number
+h!1AF6                  # Hexadecimal Number
 \$                      # Dollar signs
 \'                      # Single quotation mark
 \l                      # Line feed
@@ -99,8 +99,13 @@ hex!1AF6                # Hexadecimal Number
 \p                      # Page feed
 \r                      # Line break
 \t                      # Tab
-time!1d23h59m59s999ms   # Time
+t!1d23h59m59s999ms      # Time
 tod!99:98:97.654        # Time of Day
-date!2012-02-06         # Date
+d!2012-02-06            # Date
 dt!1986-08-05-10:30     # Date and Time
+}}}
+
+=== Memory Locations ===
+{{{
+<mem.loc. alias> @ { in | out | mem } { bit | byte | word | dword | config } <location>
 }}}
