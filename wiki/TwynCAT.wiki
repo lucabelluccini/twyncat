@@ -76,3 +76,8 @@ alias <alias> <assignment term>
 {{{
 subrange <sdt> <subrange name> <lower limit>:<up limit>
 }}}
+
+=== Range (arrays) ===
+{{{
+[<lower limit>..<up limit>]
+}}}
