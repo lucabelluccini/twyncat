@@ -107,5 +107,5 @@ dt!1986-08-05-10:30     # Date and Time
 
 === Memory Locations ===
 {{{
-<mem.loc. alias> @ { in | out | mem } { bit | byte | word | dword | config } <location>
+{in | out | mem} <memory location alias> @ <location> {bit | byte | word | dword | config} 
 }}}
