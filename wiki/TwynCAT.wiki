@@ -59,7 +59,7 @@ Variables must be already declared or just declared at first usage.
 
 === Enumerations ===
 {{{
-enum <enumeration name>: {enum { = <initialization> }? }+
+enum <enumeration name> : {enum { = <initialization> }? }+
 }}}
 
 === Pointers ===
@@ -107,5 +107,5 @@ dt!1986-08-05-10:30     # Date and Time
 
 === Memory Locations ===
 {{{
-{in | out | mem} <memory location alias> @ <location> {bit | byte | word | dword | config} 
+{in | out | mem} location <memory location alias> @ <location> {bit | byte | word | dword | config} 
 }}}
