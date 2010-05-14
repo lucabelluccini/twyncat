@@ -1,0 +1,17 @@
+#summary How-To install AntlrDT Plug-In in Eclipse
+
+= Requirements =
+
+  * Eclipse 3.5+ (Ganymede, Galileo...)
+  * DLTK - Repository: http://download.eclipse.org/technology/dltk/updates/
+  * ZEST - Repository: http://download.eclipse.org/tools/gef/updates/releases/
+  * AntlrDT - Website: http://www.certiv.net/downloads/antlrdtdownload.html
+  * Subclipse - Repository: http://subclipse.tigris.org/update_1.6.x
+
+= Details =
+
+  # Extract Eclipse in your preferred path
+  # Via Update Manager, add the repositories and instll DLTK and ZEST (GEF)
+  # Close Eclipse
+  # Extract AntlrDT zip file and copy the content into `eclipse\dropins\`
+  # Restart Eclipse
