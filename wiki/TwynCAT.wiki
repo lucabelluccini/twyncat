@@ -8,8 +8,12 @@ In this page we are proposing some examples and features of TwynCAT.
 
 {{{
 prog get1channelFast:
-       T_DCTIME diff1[1:250000], diff2[1:250000], diff3[1:250000], diff4[1:250000], diff5[1:16000]
-       t_DCTIME BufferLatchPosEL1252ACh1
+       T_DCTIME BufferLatchPosEL1252ACh1, 
+                diff1[1:250000],              
+                diff2[1:250000], 
+                diff3[1:250000], 
+                diff4[1:250000], 
+                diff5[1:16000]
        bool first = True, different
        udint skip = 1000
        # Inizializzazione
@@ -23,7 +27,9 @@ prog get1channelFast:
                      different = True
               else:
                      different = False
-              udint cnt = 0, nexp = 1016000, array_num = 0
+              udint cnt = 0,
+                    nexp = 1016000,
+                    array_num = 0
               if cnt < (nexp + 1):
                      if different:
                             case array_num:
@@ -53,9 +59,9 @@ Variables must be already declared or just declared at first usage.
 
 === Declaration and arrays ===
 {{{
-{in | out | inout}? {<sdt> | <udt> } <variable name> # variable
-{in | out | inout}? <sdt> <variable name>[<lower limit>:<up limit>] # 1-dim array
-{in | out | inout}? {retain | persistent | constant} <sdt> <variable name>
+{in | out | inout}?.{<sdt> | <udt> } <variable name> # variable
+{in | out | inout}?.<sdt> <variable name>[<lower limit>:<up limit>] # 1-dim array
+{in | out | inout}?.{retain | persistent | constant}.<sdt> <variable name>
 }}}
 
 === Enumerations ===
@@ -117,5 +123,5 @@ dt!1986-08-05-10:30     # Date and Time
 
 === Memory Locations ===
 {{{
-{in | out | mem} location <memory location alias> @ <location> {bit | byte | word | dword | config} 
+{in | out | mem}.location <memory location alias> @ <location> {bit | byte | word | dword | config} 
 }}}
