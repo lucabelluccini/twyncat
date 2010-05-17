@@ -1,16 +1,17 @@
 grammar twyncat;
 
+options {
+	backtrack=true; // automatically resolve similar rules (which begin the same way)
+	//memoize=true; // use extra memory to speed up backtracking
+	//output=AST; // generate an abstract syntax tree from matched rules
+	//ASTLabelType=CommonTree; // class of tree node (must be cast from Object, otherwise)
+}
+
 tokens {
     INDENT;
     DEDENT;
 }
 
-options {
-	//backtrack=true; // automatically resolve similar rules (which begin the same way)
-	//memoize=true; // use extra memory to speed up backtracking
-	//output=AST; // generate an abstract syntax tree from matched rules
-	//ASTLabelType=CommonTree; // class of tree node (must be cast from Object, otherwise)
-}
 
 @lexer::members {
 /** Handles context-sensitive lexing of implicit line joining such as
@@ -21,6 +22,11 @@ options {
 int implicitLineJoiningLevel = 0;
 int startPosition=-1;
 }
+
+// === Program ===
+program
+	: declaration (declaration)* EOF
+	;
 
 // === Declaration ===
 /* EXAMPLES
@@ -34,7 +40,7 @@ bool myflag = True, yourflag = False, anyoneflag
 out.constant.dint myConstant = 2147483640
 */
 declaration
-	: declarationheader vardeclarationlist
+	: declarationHeader varDeclarationList
 	;
 
 // === Declaration Header ===
@@ -46,7 +52,7 @@ retain.bool
 out.persistent.bool
 inout.retain.mytype
 */
-declarationheader
+declarationHeader
 	: ( VARDECLARATIONPURPOSE '.' )? ( VARDECLATTRIBUTE '.' )? ( SDT | UDT )
 	;
 
@@ -55,8 +61,8 @@ declarationheader
 myidentifier, mysecondidentifier = 3, mythirdarray[1:40]
 mynewidentifier
 */
-vardeclarationlist
-	: vardeclaration (',' vardeclaration)*
+varDeclarationList
+	: varDeclaration ( COMMA varDeclaration )*
 	;
 
 // === Variable Declaration ===
@@ -64,17 +70,48 @@ vardeclarationlist
 myidentifier
 my2ndidentifier = True
 */
-vardeclaration
-	: varidentifierdeclaration ( vardeclarationassignment )?
+varDeclaration
+	: varIdentifierDeclaration ( varDeclarationAssignment )?
 	;
 
-vardeclarationassignment
-	: '=' CONSTANT
+// === Variable Assignment ===
+/* EXAMPLES
+= 3999
+= 'c'
+= True
+*/
+varDeclarationAssignment
+	: '=' varDeclarationConstantExpression
 	;
 
-varidentifierdeclaration
-	: IDENTIFIER
-	| IDENTIFIER ('[' ARRAYRANGE ']') // TODO UP TO 3 ???
+// === Variable Constant Expression ===
+/* EXAMPLES
+3000
+100e+2
+True
+t!1d2h3m4s567ms
+*/
+// TODO: Array constant initialization
+// TODO: Strcuture constant initialization
+varDeclarationConstantExpression
+	: LITERALS
+	| 'altro'
+	;
+
+// === Variable Identifier Declaration
+/*
+myVar
+myVar[1:40]
+mySecond[1:10][1:100]
+*/
+varIdentifierDeclaration
+	: IDENTIFIER ( IDENTIFIERARRAYMOD )?
+	;
+
+IDENTIFIERARRAYMOD
+	: ( LBRACK ARRAYRANGE RBRACK )
+	| ( LBRACK ARRAYRANGE RBRACK ) ( LBRACK ARRAYRANGE RBRACK )
+	| ( LBRACK ARRAYRANGE RBRACK ) ( LBRACK ARRAYRANGE RBRACK ) ( LBRACK ARRAYRANGE RBRACK )
 	;
 
 // === Standard Data Type ===
@@ -104,17 +141,141 @@ UDT	:
 	;
 
 // === Identifier ===
+// TODO: need to allow myVarUDT.myMember
 IDENTIFIER
 	:
 	( 'a' .. 'z' | 'A' .. 'Z' | '_') ( 'a' .. 'z' | 'A' .. 'Z' | '_' | '0' .. '9' )*
 	;
-
-CONSTANT
-	: '3'	// TODO
+	
+// === Literals ===
+// TODO: String initialization
+LITERALS
+	: BOOLEANL
+	| BINARYL
+	| HEXL
+	| DECIMALL
+	| OCTALL
+	| TIMEL
+	| TODL
+	| DATEL
+	| DATETIMEL
+	| FLOATINGPOINTL
 	;
 
+BOOLEANL
+	: 'True' | 'False';
+	
+BINARYL
+	: 'b!' ('0'..'1')+
+	;
+	
+HEXL
+	: 'h!' HEXDIGIT+
+	;
+
+fragment
+HEXDIGIT
+	: ('0'..'9'|'a'..'f'|'A'..'F')
+	;
+
+DECIMALL
+	: ('0' | '1'..'9' '0'..'9'*)
+	;
+
+OCTALL
+	: 'o!' ('0'..'7')+
+	;
+
+TIMEL
+	: 't!' ( DECIMALL 'd' )? ( DECIMALL 'h' )? ( DECIMALL 'm' )? ( DECIMALL 's' )? ( DECIMALL 'ms' )? 
+	;
+
+TODL
+	: 'tod!' DECIMALL ':' DECIMALL ':' DECIMALL ( '.' DECIMALL )?
+	;
+
+DATEL
+	: 'd!' DECIMALL '-' DECIMALL '-' DECIMALL
+	;
+
+DATETIMEL
+	: 'dt!' DECIMALL '-' DECIMALL '-' DECIMALL '-' DECIMALL ':' DECIMALL
+	;
+	
+CHARACTERL
+	:   '\'' ( EscapeSequence | ~('\''|'\\') ) '\''
+	;
+
+STRINGL
+	:  '"' ( EscapeSequence | ~('\\'|'"') )* '"'
+	;
+
+fragment
+EscapeSequence
+	:   '\\' ('b'|'t'|'n'|'f'|'r'|'\"'|'\''|'\\')
+	|   OctalEscape
+	;
+	
+fragment
+OctalEscape
+	:   '\\' ('0'..'3') ('0'..'7') ('0'..'7')
+	|   '\\' ('0'..'7') ('0'..'7')
+	|   '\\' ('0'..'7')
+	;
+
+FLOATINGPOINTL
+	:   ('0'..'9')+ '.' ('0'..'9')* Exponent?
+	|   '.' ('0'..'9')+ Exponent?
+	|   ('0'..'9')+ Exponent
+	|   ('0'..'9')+ Exponent?
+	;
+
+fragment
+Exponent : ('e'|'E') ('+'|'-')? ('0'..'9')+ ;	
+
+/*
+//7.4                     # Decimal Number
+//1.64e+009               # Decimal Number
+\$                      # Dollar signs
+\'                      # Single quotation mark
+\l                      # Line feed
+\n                      # New line
+\p                      # Page feed
+\r                      # Line break
+\t                      # Tab
+*/
+
+/** Match various string types.  Note that greedy=false implies '''
+ *  should make us exit loop not continue.
+ */
+STRING
+    :   ('r'|'u'|'ur')?
+        (   '\'\'\'' (options {greedy=false;}:TRIAPOS)* '\'\'\''
+        |   '"""' (options {greedy=false;}:TRIQUOTE)* '"""'
+        |   '"' (ESC|~('\\'|'\n'|'"'))* '"'
+        |   '\'' (ESC|~('\\'|'\n'|'\''))* '\''
+        )
+    ;
+
+/** the two '"'? cause a warning -- is there a way to avoid that? */
+fragment
+TRIQUOTE
+    : '"'? '"'? (ESC|~('\\'|'"'))+
+    ;
+
+/** the two '\''? cause a warning -- is there a way to avoid that? */
+fragment
+TRIAPOS
+    : '\''? '\''? (ESC|~('\\'|'\''))+
+    ;
+
+fragment
+ESC
+    :    '\\' .
+    ;
+
 ARRAYRANGE
-	: '1:200'	// TODO
+	: DECIMALL ':' DECIMALL
 	;
 
 VARDECLARATIONPURPOSE
