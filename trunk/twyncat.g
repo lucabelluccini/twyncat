@@ -20,12 +20,102 @@ tokens {
  *       4]
  */
 int implicitLineJoiningLevel = 0;
-int startPosition=-1;
+int startPosition = -1;
 }
 
-// === Program ===
+/*
+=== ?!?!?!?!? ===
+  * Identifiers can be a single word or a structure component such as mystructure.mycomponent
+  * Structures, aliases, memory locations
+*/
+
+// === File ===
+file
+	: imports functions program EOF
+	;
+
+// === Imports ===
+// TODO: manage imports
+imports
+	: ( singleImport )*
+	;
+
+singleImport
+	: 'import' IDENTIFIER NEWLINE
+	;
+
+// === Functions ===
+functions
+	: ( functionDeclaration )*
+	;
+
+functionDeclaration
+	: 'def' IDENTIFIER ':' suite
+	;
+
+stmt : simpleStm
+     | compoundStm
+     ;
+
 program
-	: declaration (declaration)* EOF
+	: 'prog' IDENTIFIER ':' suite
+	;
+	
+compoundStm
+	: ifStm
+	| caseStm
+	| forStm
+	| whileStm
+	| repeatuntilStm
+	;
+
+// TODO: it is not complete
+assignmentStm
+	: IDENTIFIER '=' expression
+	;
+
+functionCallStm
+	: functionCallName '(' functionCallArgs ')' ':' NEWLINE
+	;
+
+functionCallArgs
+	:
+	;
+
+functionCallName
+	:
+	;
+
+returnStm
+	: 'return'
+	;	
+
+ifStm
+	: 'if' test COLON suite elifClause*  ('else' COLON suite)?
+	;
+
+elifClause
+	: elifClause : 'elif' test COLON suite
+	;
+
+caseStm
+	: 
+	;
+
+forStm
+	:
+	;
+	
+whileStm
+	:
+	;
+
+repeatuntilStm
+	:
+	;
+
+exitStm
+	: 'exit'
 	;
 
 // === Declaration ===
@@ -62,7 +152,7 @@ myidentifier, mysecondidentifier = 3, mythirdarray[1:40]
 mynewidentifier
 */
 varDeclarationList
-	: varDeclaration ( COMMA varDeclaration )*
+	: varDeclaration ( ',' varDeclaration )*
 	;
 
 // === Variable Declaration ===
@@ -71,17 +161,7 @@ myidentifier
 my2ndidentifier = True
 */
 varDeclaration
-	: varIdentifierDeclaration ( varDeclarationAssignment )?
-	;
-
-// === Variable Assignment ===
-/* EXAMPLES
-= 3999
-= 'c'
-= True
-*/
-varDeclarationAssignment
-	: '=' varDeclarationConstantExpression
+	: varIdentifierDeclaration ( '=' varDeclarationConstantExpression )?
 	;
 
 // === Variable Constant Expression ===
@@ -91,28 +171,188 @@ varDeclarationAssignment
 True
 t!1d2h3m4s567ms
 */
-// TODO: Array constant initialization
-// TODO: Strcuture constant initialization
 varDeclarationConstantExpression
-	: LITERALS
-	| 'altro'
+	: IDENTIFIER				// Such as MYCONSTANT
+	| literal				// Such as 1000 or True or t!1d2h3m4s567ms
+	| arrayConstantExpression		// Such as [1,6,8] or [t!1d2h3m4s567ms, t!1d2h3m]
+	| structureConstantExpression		// Such as ( myElem = 8, my2ndElem = 10 )
 	;
 
 // === Variable Identifier Declaration
-/*
+/* EXAMPLE
 myVar
 myVar[1:40]
 mySecond[1:10][1:100]
 */
 varIdentifierDeclaration
-	: IDENTIFIER ( IDENTIFIERARRAYMOD )?
+	: IDENTIFIER ( identifierArrayMod )?
 	;
 
-IDENTIFIERARRAYMOD
-	: ( LBRACK ARRAYRANGE RBRACK )
-	| ( LBRACK ARRAYRANGE RBRACK ) ( LBRACK ARRAYRANGE RBRACK )
-	| ( LBRACK ARRAYRANGE RBRACK ) ( LBRACK ARRAYRANGE RBRACK ) ( LBRACK ARRAYRANGE RBRACK )
+// === Identifier Array Mod
+/* EXAMPLE
+[10:400]
+[1:10][1:20]
+*/
+identifierArrayMod
+	: ( LBRACK arrayRange RBRACK )
+	| ( LBRACK arrayRange RBRACK ) ( LBRACK arrayRange RBRACK )
+	| ( LBRACK arrayRange RBRACK ) ( LBRACK arrayRange RBRACK ) ( LBRACK arrayRange RBRACK )
 	;
+
+arrayRange
+	: DECIMALL ':' DECIMALL
+	;
+
+// === Array Constant Expression ===
+/* EXAMPLE
+[1,2,3,4,5]
+[1,2][3,4][5,6]
+*/
+arrayConstantExpression
+	: ( LBRACK literalsList RBRACK )
+	| ( LBRACK literalsList RBRACK ) ( LBRACK literalsList RBRACK )
+	| ( LBRACK literalsList RBRACK ) ( LBRACK literalsList RBRACK ) ( LBRACK literalsList RBRACK )
+	;
+
+// === Literals List ===
+/* EXAMPLE
+o!66
+h!AF,h!1024,b!0001010
+*/	
+literalsList
+	: literal ( ',' literal )*
+	;
+
+// === Literals ===
+// TODO: String initialization
+literal
+	: stringL
+	| binaryL
+	| HEXL
+	| DECIMALL
+	| octalL
+	| timeL
+	| todL
+	| dateL
+	| datetimeL
+	| floatingpointL
+	| BOOLEANL
+	;
+
+// === Structure Constant Expression ===
+/* EXAMPLE
+( member = 3 )
+( member1 = h!FF, member2 = o!40 )
+*/
+structureConstantExpression
+	: ( LPAREN ( IDENTIFIER '=' varDeclarationConstantExpression ) ( ',' IDENTIFIER '=' varDeclarationConstantExpression )* RPAREN )	// Shouldn't use varIdentifierDeclaration cause of cannot re-define arrays on the fly (Is that right?)
+	;
+
+simpleStm
+	: smallStm (options {greedy=true;}:SEMI smallStm)* (SEMI)? NEWLINE
+	;
+
+smallStm
+	: exprStm
+        | flowStm
+        | declaration
+        //| import_stmt
+        //| global_stmt
+        ;
+
+exprStm
+	:
+	;
+	
+flowStm
+	: returnStm
+	| exitStm
+	;
+
+suite
+	: simpleStm
+	| NEWLINE INDENT (stmt)+ DEDENT
+	;
+
+test
+	: orTest
+	( ('if' orTest 'else') => 'if' orTest 'else' test)?
+	;
+
+orTest
+	: andTest (OR andTest)*
+        ;
+
+andTest
+	: notTest (AND notTest)*
+        ;
+
+notTest
+	: NOT notTest
+	| comparison
+	;
+	
+comparison
+	: expr (comparisonOp expr)*
+	;
+
+comparisonOp 
+	: LESS
+        | GREATER
+        | EQUAL
+        | GREATEREQUAL
+        | LESSEQUAL
+        | ALT_NOTEQUAL
+        | NOTEQUAL
+        //| 'is'
+        //| 'is' NOT
+        ;
+
+expr
+	: xorExpr (VBAR xorExpr)*
+	;
+
+xorExpr
+	: andExpr (CIRCUMFLEX andExpr)*
+	;
+
+andExpr
+	: shiftExpr (AMPER shiftExpr)*
+	;
+
+shiftExpr
+	: arithExpr ((LEFTSHIFT|RIGHTSHIFT) arithExpr)*
+	;
+
+arithExpr
+	: term ((PLUS|MINUS) term)*
+	;
+
+term
+	: factor ((STAR | SLASH | PERCENT | DOUBLESLASH ) factor)*
+	;
+
+factor
+	: PLUS factor
+	| MINUS factor
+	| TILDE factor
+	| power
+	;
+
+power	
+	: atom (trailer)* (options {greedy=true;}:DOUBLESTAR factor)?
+	;
+
+atom
+	: literal
+	| IDENTIFIER
+	;
+
+trailer
+	: LPAREN (arglist)? RPAREN
+	| DOT IDENTIFIER
+	;
+
 
 // === Standard Data Type ===
 SDT	:
@@ -136,36 +376,25 @@ SDT	:
 	;
 
 // === User Data Type ===
+// TODO: All
 UDT	:
-	'udt'		// TODO
+	'udt'
 	;
 
-// === Identifier ===
-// TODO: need to allow myVarUDT.myMember
-IDENTIFIER
-	:
-	( 'a' .. 'z' | 'A' .. 'Z' | '_') ( 'a' .. 'z' | 'A' .. 'Z' | '_' | '0' .. '9' )*
+floatingpointL
+	:   ('0'..'9')+ '.' ('0'..'9')* Exponent?
+	|   '.' ('0'..'9')+ Exponent?
+	|   ('0'..'9')+ Exponent
+	|   ('0'..'9')+ Exponent?
 	;
-	
-// === Literals ===
-// TODO: String initialization
-LITERALS
-	: BOOLEANL
-	| BINARYL
-	| HEXL
-	| DECIMALL
-	| OCTALL
-	| TIMEL
-	| TODL
-	| DATEL
-	| DATETIMEL
-	| FLOATINGPOINTL
-	;
+
+fragment
+Exponent : ('e'|'E') ('+'|'-')? ('0'..'9')+ ;	
 
 BOOLEANL
 	: 'True' | 'False';
 	
-BINARYL
+binaryL
 	: 'b!' ('0'..'1')+
 	;
 	
@@ -177,28 +406,33 @@ fragment
 HEXDIGIT
 	: ('0'..'9'|'a'..'f'|'A'..'F')
 	;
-
+	
+fragment
 DECIMALL
 	: ('0' | '1'..'9' '0'..'9'*)
 	;
 
-OCTALL
+octalL
 	: 'o!' ('0'..'7')+
 	;
 
-TIMEL
-	: 't!' ( DECIMALL 'd' )? ( DECIMALL 'h' )? ( DECIMALL 'm' )? ( DECIMALL 's' )? ( DECIMALL 'ms' )? 
+timeL
+	: 't!' ( DECIMALL 'd' ) ( DECIMALL 'h' )? ( DECIMALL 'm' )? ( DECIMALL 's' )? ( DECIMALL 'ms' )? 
+	| 't!' ( DECIMALL 'd' )? ( DECIMALL 'h' ) ( DECIMALL 'm' )? ( DECIMALL 's' )? ( DECIMALL 'ms' )? 
+	| 't!' ( DECIMALL 'd' )? ( DECIMALL 'h' )? ( DECIMALL 'm' ) ( DECIMALL 's' )? ( DECIMALL 'ms' )? 
+	| 't!' ( DECIMALL 'd' )? ( DECIMALL 'h' )? ( DECIMALL 'm' )? ( DECIMALL 's' ) ( DECIMALL 'ms' )? 
+	| 't!' ( DECIMALL 'd' )? ( DECIMALL 'h' )? ( DECIMALL 'm' )? ( DECIMALL 's' )? ( DECIMALL 'ms' ) 
 	;
 
-TODL
+todL
 	: 'tod!' DECIMALL ':' DECIMALL ':' DECIMALL ( '.' DECIMALL )?
 	;
 
-DATEL
+dateL
 	: 'd!' DECIMALL '-' DECIMALL '-' DECIMALL
 	;
 
-DATETIMEL
+datetimeL
 	: 'dt!' DECIMALL '-' DECIMALL '-' DECIMALL '-' DECIMALL ':' DECIMALL
 	;
 	
@@ -206,7 +440,7 @@ CHARACTERL
 	:   '\'' ( EscapeSequence | ~('\''|'\\') ) '\''
 	;
 
-STRINGL
+stringL
 	:  '"' ( EscapeSequence | ~('\\'|'"') )* '"'
 	;
 
@@ -222,16 +456,6 @@ OctalEscape
 	|   '\\' ('0'..'7') ('0'..'7')
 	|   '\\' ('0'..'7')
 	;
-
-FLOATINGPOINTL
-	:   ('0'..'9')+ '.' ('0'..'9')* Exponent?
-	|   '.' ('0'..'9')+ Exponent?
-	|   ('0'..'9')+ Exponent
-	|   ('0'..'9')+ Exponent?
-	;
-
-fragment
-Exponent : ('e'|'E') ('+'|'-')? ('0'..'9')+ ;	
 
 /*
 //7.4                     # Decimal Number
@@ -274,10 +498,6 @@ ESC
     :    '\\' .
     ;
 
-ARRAYRANGE
-	: DECIMALL ':' DECIMALL
-	;
-
 VARDECLARATIONPURPOSE
 	: ( 'in' | 'out' | 'inout')
 	;
@@ -286,20 +506,20 @@ VARDECLATTRIBUTE
 	: ('retain' | 'persistent' | 'constant')
 	;
 
-NEWLINE	:   (( FF )?( CR )? LF )+
-        {if ( startPos==0 || implicitLineJoiningLevel>0 )
+NEWLINE	:   (( FF )?( CR )? '\n' )+
+        {if ( startPosition==0 || implicitLineJoiningLevel>0 )
             $channel=HIDDEN;
         }
     ;
 
-WS  :    {startPos>0}?=> (' '| TAB | FF )+ {$channel=HIDDEN;}
+WS  :    {startPosition>0}?=> (' '| TAB | FF )+ {$channel=HIDDEN;}
     ;
 
 LEADING_WS
 @init {
     int spaces = 0;
 }
-    :   {startPos==0}?=>		// If it is starting from first column
+    :   {startPosition==0}?=>		// If it is starting from first column
         (   {implicitLineJoiningLevel>0}? ( ' ' | TAB )+ {$channel=HIDDEN;}	// It is within a no-indentation context (ignores them)
 	|    ( ' ' { spaces++; } | TAB { spaces += 8; spaces -= (spaces \% 8); } )+ 	// Counts how many ' ' will be generated
         {
@@ -320,21 +540,19 @@ COMMENT
 @init {
     $channel=HIDDEN;
 }
-    :    {startPos==0}?=> ( WS | TAB )* HASH (~LF)* LF+
-    |    {startPos>0}?=> HASH (~LF)* // let NEWLINE handle \n unless char pos==0 for '#'
+    :    {startPosition==0}?=> ( WS | TAB )* HASH (~'\n')* '\n'+
+    |    {startPosition>0}?=> HASH (~'\n')* // let NEWLINE handle \n unless char pos==0 for '#'
     ;
 
 FF		: '\u000C';
 HASH		: '#';
 TAB		: '\t';
 CR		: '\r';
-LF		: '\n';
 LPAREN		: '(' {implicitLineJoiningLevel++;} ;
 RPAREN		: ')' {implicitLineJoiningLevel--;} ;
 LBRACK		: '[' {implicitLineJoiningLevel++;} ;
 RBRACK		: ']' {implicitLineJoiningLevel--;} ;
 COLON		: ':' ;
-COMMA		: ',' ;
 SEMI		: ';' ;
 PLUS		: '+' ;
 MINUS		: '-' ;
@@ -377,3 +595,10 @@ AT		: '@' ;
 AND		: 'and' ;
 OR		: 'or' ;
 NOT		: 'not' ;
+
+// === Identifier ===
+// TODO: need to allow myVarUDT.myMember
+IDENTIFIER
+	:
+	( 'a' .. 'z' | 'A' .. 'Z' | '_') ( 'a' .. 'z' | 'A' .. 'Z' | '_' | '0' .. '9' )*
+	;
