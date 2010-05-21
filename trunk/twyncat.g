@@ -319,7 +319,7 @@ True
 t!1d2h3m4s567ms
 */
 varDeclarationConstantExpression
-	: IDENTIFIER				// Such as MYCONSTANT
+	: IDENTIFIER ( '.' IDENTIFIER )*	// Such as MYCONSTANT
 	| literal				// Such as 1000 or True or t!1d2h3m4s567ms
 	| arrayConstantExpression		// Such as [1,6,8] or [t!1d2h3m4s567ms, t!1d2h3m]
 	| structureConstantExpression		// Such as ( myElem = 8, my2ndElem = 10 )
@@ -394,13 +394,6 @@ literal
 structureConstantExpression
 	: ( LPAREN ( IDENTIFIER '=' varDeclarationConstantExpression ) ( ',' IDENTIFIER '=' varDeclarationConstantExpression )* RPAREN )	// Shouldn't use varIdentifierDeclaration cause of cannot re-define arrays on the fly (Is that right?)
 	;
-	
-
-
-
-
-
-
 // === Standard Data Type ===
 SDT	:
 	'bool'		// {True, False}
