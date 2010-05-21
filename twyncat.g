@@ -29,6 +29,217 @@ int startPosition = -1;
   * Structures, aliases, memory locations
 */
 
+singleLogicLine
+	: NEWLINE
+	| simpleStm
+	| compoundStm NEWLINE
+	;
+
+structureComponent
+	: IDENTIFIER (DOT IDENTIFIER)*
+	;
+	
+functionDefinition
+	: 'def' IDENTIFIER parameters COLON suite
+	;
+	
+parameters 
+	: LPAREN (argumentList)? RPAREN
+	;
+	
+argumentList
+	:	
+	;
+
+statement
+	: simpleStm
+	| compoundStm
+	;
+
+simpleStm
+	: smallStm (options {greedy=true;}:SEMI smallStm)* (SEMI)? NEWLINE
+	;
+
+smallStm
+	: exprStm
+        | flowStm
+        | declaration
+        ;
+exprStm
+	: testList ( augAssign testList | assigns )?
+	;
+
+assigns
+	: ( assignTestList )+
+	;
+
+assignTestList
+	: ASSIGN testList
+	;
+
+augAssign
+	: PLUSEQUAL
+	| MINUSEQUAL
+	| STAREQUAL
+	| SLASHEQUAL
+	| PERCENTEQUAL
+	| ANDEQUAL
+	| OREQUAL
+	| LEFTSHIFTEQUAL
+	| RIGHTSHIFTEQUAL
+	;
+
+flowStm
+	: returnStm
+	| exitStm
+	;
+
+exitStm
+	: 'exit'
+	;
+
+
+returnStm
+	: 'return'
+	;	
+
+compoundStm
+	: ifStm
+	| caseStm
+	| forStm
+	| whileStm
+	| repeatuntilStm
+	;
+
+ifStm
+	: 'if' test COLON suite elifClause*  ('else' COLON suite)?
+	;
+
+elifClause
+	: 'elif' test COLON suite
+	;
+
+caseStm
+	: 'case' test COLON NEWLINE INDENT caseElementsStm DEDENT
+	;
+	
+caseElementsStm
+	: test COLON suite
+	| 'default' COLON suite
+	;
+
+forStm
+	: 'for' IDENTIFIER 'in' '{'  '}' COLON suite
+	;
+	
+whileStm
+	: 'while' test COLON suite
+	;
+
+repeatuntilStm
+	: 'repeat' 'until' test COLON suite
+	;
+	
+repeatuntilHeaderStm
+	: 'repeat' COLON NEWLINE INDENT suite DEDENT 'until' test
+	;
+	
+suite
+	: simpleStm
+	| NEWLINE INDENT (statement)+ DEDENT
+	;
+
+test
+	: orTest
+	( ('if' orTest 'else') => 'if' orTest 'else' test)?
+	;
+
+orTest
+	: andTest (OR andTest)*
+        ;
+
+andTest
+	: notTest (AND notTest)*
+        ;
+
+notTest
+	: NOT notTest
+	| comparison
+	;
+	
+comparison
+	: expr (comparisonOp expr)*
+	;
+
+comparisonOp 
+	: LESS
+        | GREATER
+        | EQUAL
+        | GREATEREQUAL
+        | LESSEQUAL
+        | ALT_NOTEQUAL
+        | NOTEQUAL
+        //| 'is'
+        //| 'is' NOT
+        ;
+
+expr
+	: xorExpr (VBAR xorExpr)*
+	;
+
+xorExpr
+	: andExpr (CIRCUMFLEX andExpr)*
+	;
+
+andExpr
+	: shiftExpr (AMPER shiftExpr)*
+	;
+
+shiftExpr
+	: arithExpr ((LEFTSHIFT|RIGHTSHIFT) arithExpr)*
+	;
+
+arithExpr
+	: term ((PLUS|MINUS) term)*
+	;
+
+term
+	: factor ((STAR | SLASH | PERCENT | DOUBLESLASH ) factor)*
+	;
+
+factor
+	: PLUS factor
+	| MINUS factor
+	| TILDE factor
+	| power
+	;
+
+power	
+	: atom (trailer)* (options {greedy=true;}:DOUBLESTAR factor)?
+	;
+
+atom
+	: literal
+	| IDENTIFIER
+	;
+
+trailer
+	: LPAREN (arglist)? RPAREN
+	| DOT IDENTIFIER
+	;
+
+testList
+    : test (options {k=2;}: COMMA test)* (COMMA)?
+    ;
+
+arglist
+	: argument (COMMA argument)*
+        ;
+
+argument
+	: test ( ASSIGN test )?
+        ;
+
 // === File ===
 file
 	: imports functions program EOF
@@ -41,81 +252,17 @@ imports
 	;
 
 singleImport
-	: 'import' IDENTIFIER NEWLINE
+	: 'import' IDENTIFIER ( '.' IDENTIFIER )* NEWLINE
 	;
 
 // === Functions ===
 functions
-	: ( functionDeclaration )*
+	: ( functionDefinition )*
 	;
 
-functionDeclaration
-	: 'def' IDENTIFIER ':' suite
-	;
-
-stmt : simpleStm
-     | compoundStm
-     ;
-
+// === Program ===
 program
 	: 'prog' IDENTIFIER ':' suite
-	;
-	
-compoundStm
-	: ifStm
-	| caseStm
-	| forStm
-	| whileStm
-	| repeatuntilStm
-	;
-
-// TODO: it is not complete
-assignmentStm
-	: IDENTIFIER '=' expression
-	;
-
-functionCallStm
-	: functionCallName '(' functionCallArgs ')' ':' NEWLINE
-	;
-
-functionCallArgs
-	:
-	;
-
-functionCallName
-	:
-	;
-
-returnStm
-	: 'return'
-	;	
-
-ifStm
-	: 'if' test COLON suite elifClause*  ('else' COLON suite)?
-	;
-
-elifClause
-	: elifClause : 'elif' test COLON suite
-	;
-
-caseStm
-	: 
-	;
-
-forStm
-	:
-	;
-	
-whileStm
-	:
-	;
-
-repeatuntilStm
-	:
-	;
-
-exitStm
-	: 'exit'
 	;
 
 // === Declaration ===
@@ -247,111 +394,11 @@ literal
 structureConstantExpression
 	: ( LPAREN ( IDENTIFIER '=' varDeclarationConstantExpression ) ( ',' IDENTIFIER '=' varDeclarationConstantExpression )* RPAREN )	// Shouldn't use varIdentifierDeclaration cause of cannot re-define arrays on the fly (Is that right?)
 	;
-
-simpleStm
-	: smallStm (options {greedy=true;}:SEMI smallStm)* (SEMI)? NEWLINE
-	;
-
-smallStm
-	: exprStm
-        | flowStm
-        | declaration
-        //| import_stmt
-        //| global_stmt
-        ;
-
-exprStm
-	:
-	;
 	
-flowStm
-	: returnStm
-	| exitStm
-	;
 
-suite
-	: simpleStm
-	| NEWLINE INDENT (stmt)+ DEDENT
-	;
 
-test
-	: orTest
-	( ('if' orTest 'else') => 'if' orTest 'else' test)?
-	;
 
-orTest
-	: andTest (OR andTest)*
-        ;
 
-andTest
-	: notTest (AND notTest)*
-        ;
-
-notTest
-	: NOT notTest
-	| comparison
-	;
-	
-comparison
-	: expr (comparisonOp expr)*
-	;
-
-comparisonOp 
-	: LESS
-        | GREATER
-        | EQUAL
-        | GREATEREQUAL
-        | LESSEQUAL
-        | ALT_NOTEQUAL
-        | NOTEQUAL
-        //| 'is'
-        //| 'is' NOT
-        ;
-
-expr
-	: xorExpr (VBAR xorExpr)*
-	;
-
-xorExpr
-	: andExpr (CIRCUMFLEX andExpr)*
-	;
-
-andExpr
-	: shiftExpr (AMPER shiftExpr)*
-	;
-
-shiftExpr
-	: arithExpr ((LEFTSHIFT|RIGHTSHIFT) arithExpr)*
-	;
-
-arithExpr
-	: term ((PLUS|MINUS) term)*
-	;
-
-term
-	: factor ((STAR | SLASH | PERCENT | DOUBLESLASH ) factor)*
-	;
-
-factor
-	: PLUS factor
-	| MINUS factor
-	| TILDE factor
-	| power
-	;
-
-power	
-	: atom (trailer)* (options {greedy=true;}:DOUBLESTAR factor)?
-	;
-
-atom
-	: literal
-	| IDENTIFIER
-	;
-
-trailer
-	: LPAREN (arglist)? RPAREN
-	| DOT IDENTIFIER
-	;
 
 
 // === Standard Data Type ===
@@ -457,7 +504,7 @@ OctalEscape
 	|   '\\' ('0'..'7')
 	;
 
-/*
+/* TODO
 //7.4                     # Decimal Number
 //1.64e+009               # Decimal Number
 \$                      # Dollar signs
@@ -469,9 +516,10 @@ OctalEscape
 \t                      # Tab
 */
 
-/** Match various string types.  Note that greedy=false implies '''
- *  should make us exit loop not continue.
- */
+/*
+Match various string types.  Note that greedy=false implies '''
+should make us exit loop not continue.
+*/
 STRING
     :   ('r'|'u'|'ur')?
         (   '\'\'\'' (options {greedy=false;}:TRIAPOS)* '\'\'\''
@@ -582,15 +630,16 @@ DOUBLESTAR	: '**' ;
 STAREQUAL	: '*=' ;
 DOUBLESLASH	: '//' ;
 SLASHEQUAL	: '/=' ;
-VBAREQUAL	: '|=' ;
+OREQUAL		: '|=' ;
 PERCENTEQUAL	: '%=' ;
-AMPEREQUAL	: '&=' ;
+ANDEQUAL	: '&=' ;
 CIRCUMFLEXEQUAL	: '^=' ;
 LEFTSHIFTEQUAL	: '<<=' ;
 RIGHTSHIFTEQUAL	: '>>=' ;
 DOUBLESTAREQUAL	: '**=' ;
 DOUBLESLASHEQUAL: '//=' ;
 DOT		: '.' ;
+COMMA		: ',';
 AT		: '@' ;
 AND		: 'and' ;
 OR		: 'or' ;
