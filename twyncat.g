@@ -23,18 +23,62 @@ int implicitLineJoiningLevel = 0;
 int startPosition = -1;
 }
 
+// === Boolean Literal ===
+BOOLEANL
+	: 'True' | 'False';
+
+// === Variable Purpose (defined on declaration) ===
+VARDECLARATIONPURPOSE
+	: ( 'in' | 'out' | 'inout' )
+	;
+
+// === Variable attribute ===
+VARDECLATTRIBUTE
+	: ('retain' | 'persistent' | 'constant')
+	;
+
+// === Standard Data Type ===
+SDT	:
+	'bool'		// {True, False}
+	| 'byte'	// {0 to 255}
+	| 'word'	// {0 to 65535}
+	| 'dword'	// {0 to 4294967295}
+	| 'sint'	// {-128 to 127}
+	| 'usint'	// {0 to 255}
+	| 'int'		// {-32768 to 32767}
+	| 'uint'	// {0 to 65535}
+	| 'dint'	// {-2147483648 to 2147483647}
+	| 'udint'	// {0 to 4294967295}
+	| 'real'	// {~ -3.402823 x 10^38 to ~ 3.402823 x 1038}
+	| 'lreal'	// {~ -1.79769313486231E308 to ~ 1.79769313486232E308}
+	| 'string'	// {(dim) 'This is a String';}
+	| 'time'	// {T#0ms to T#71582m47s295ms} - T#9d8h7m6s5ms
+	| 'tod'		// {TOD#00:00 to TOD#1193:02:47.295} - TOD#00:00:00.001
+	| 'date'	// {D#1970-01-01 to D#2106-02-06} - D#1972-03-29
+	| 'dt'		// {DT#1970-01-01-00:00 to DT#2106-02-06-06:28:15}
+	;
+
+// === Identifier ===
+IDENTIFIER
+	:
+	( 'a' .. 'z' | 'A' .. 'Z' | '_') ( 'a' .. 'z' | 'A' .. 'Z' | '_' | '0' .. '9' )*
+	;
+
 /*
 === ?!?!?!?!? ===
   * Identifiers can be a single word or a structure component such as mystructure.mycomponent
   * Structures, aliases, memory locations
 */
 
+// === Single Logic Line ===
+/* A generic statement */
 singleLogicLine
 	: NEWLINE
 	| simpleStm
 	| compoundStm NEWLINE
 	;
 
+// === Structure Component ===
 structureComponent
 	: IDENTIFIER (DOT IDENTIFIER)*
 	;
@@ -50,6 +94,12 @@ parameters
 argumentList
 	:	
 	;
+	
+varargslist : defparameter (options {greedy=true;}:COMMA defparameter)*
+            ;
+
+defparameter : IDENTIFIER (ASSIGN test)?
+             ;
 
 statement
 	: simpleStm
@@ -129,7 +179,7 @@ caseElementsStm
 	;
 
 forStm
-	: 'for' IDENTIFIER 'in' '{'  '}' COLON suite
+	: 'for' IDENTIFIER 'in' '{' test ':' test ':' test '}' COLON suite
 	;
 	
 whileStm
@@ -155,15 +205,15 @@ test
 	;
 
 orTest
-	: andTest (OR andTest)*
+	: andTest ('or' andTest)*
         ;
 
 andTest
-	: notTest (AND notTest)*
+	: notTest ('and' notTest)*
         ;
 
 notTest
-	: NOT notTest
+	: 'not' notTest
 	| comparison
 	;
 	
@@ -290,7 +340,7 @@ out.persistent.bool
 inout.retain.mytype
 */
 declarationHeader
-	: ( VARDECLARATIONPURPOSE '.' )? ( VARDECLATTRIBUTE '.' )? ( SDT | UDT )
+	: ( VARDECLARATIONPURPOSE '.' )? ( VARDECLATTRIBUTE '.' )? ( SDT | IDENTIFIER )
 	;
 
 // === Variable Declaration List ===
@@ -394,32 +444,7 @@ literal
 structureConstantExpression
 	: ( LPAREN ( IDENTIFIER '=' varDeclarationConstantExpression ) ( ',' IDENTIFIER '=' varDeclarationConstantExpression )* RPAREN )	// Shouldn't use varIdentifierDeclaration cause of cannot re-define arrays on the fly (Is that right?)
 	;
-// === Standard Data Type ===
-SDT	:
-	'bool'		// {True, False}
-	| 'byte'	// {0 to 255}
-	| 'word'	// {0 to 65535}
-	| 'dword'	// {0 to 4294967295}
-	| 'sint'	// {-128 to 127}
-	| 'usint'	// {0 to 255}
-	| 'int'		// {-32768 to 32767}
-	| 'uint'	// {0 to 65535}
-	| 'dint'	// {-2147483648 to 2147483647}
-	| 'udint'	// {0 to 4294967295}
-	| 'real'	// {~ -3.402823 x 10^38 to ~ 3.402823 x 1038}
-	| 'lreal'	// {~ -1.79769313486231E308 to ~ 1.79769313486232E308}
-	| 'string'	// {(dim) 'This is a String';}
-	| 'time'	// {T#0ms to T#71582m47s295ms} - T#9d8h7m6s5ms
-	| 'tod'		// {TOD#00:00 to TOD#1193:02:47.295} - TOD#00:00:00.001
-	| 'date'	// {D#1970-01-01 to D#2106-02-06} - D#1972-03-29
-	| 'dt'		// {DT#1970-01-01-00:00 to DT#2106-02-06-06:28:15}
-	;
 
-// === User Data Type ===
-// TODO: All
-UDT	:
-	'udt'
-	;
 
 floatingpointL
 	:   ('0'..'9')+ '.' ('0'..'9')* Exponent?
@@ -431,8 +456,7 @@ floatingpointL
 fragment
 Exponent : ('e'|'E') ('+'|'-')? ('0'..'9')+ ;	
 
-BOOLEANL
-	: 'True' | 'False';
+
 	
 binaryL
 	: 'b!' ('0'..'1')+
@@ -539,13 +563,6 @@ ESC
     :    '\\' .
     ;
 
-VARDECLARATIONPURPOSE
-	: ( 'in' | 'out' | 'inout')
-	;
-
-VARDECLATTRIBUTE
-	: ('retain' | 'persistent' | 'constant')
-	;
 
 NEWLINE	:   (( FF )?( CR )? '\n' )+
         {if ( startPosition==0 || implicitLineJoiningLevel>0 )
@@ -634,13 +651,3 @@ DOUBLESLASHEQUAL: '//=' ;
 DOT		: '.' ;
 COMMA		: ',';
 AT		: '@' ;
-AND		: 'and' ;
-OR		: 'or' ;
-NOT		: 'not' ;
-
-// === Identifier ===
-// TODO: need to allow myVarUDT.myMember
-IDENTIFIER
-	:
-	( 'a' .. 'z' | 'A' .. 'Z' | '_') ( 'a' .. 'z' | 'A' .. 'Z' | '_' | '0' .. '9' )*
-	;
