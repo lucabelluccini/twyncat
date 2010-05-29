@@ -58,11 +58,11 @@ INDENT  :
                         int d = 'current-depth' - 'previous-depth';
                         // back out of d code blocks
                         for (int i=1; i<=d; i++) {
-                        emit('DEDENT-token');
+                                emit('DEDENT-token');
+                        }
+                        'reduce indentation'
                 }
-                'reduce indentation'
-        }
-};
+        };
 }}}
 
 After matching a lexer rule, if you have not emitted a token manually in
