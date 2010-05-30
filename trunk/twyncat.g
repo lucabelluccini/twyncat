@@ -92,7 +92,7 @@ parameters
 	;
 	
 argumentList
-	:	
+	:'uff'
 	;
 	
 varargslist : defparameter (options {greedy=true;}:COMMA defparameter)*
