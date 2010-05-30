@@ -70,3 +70,7 @@ an action, `nextToken( )` will emit a token for you. The token is based upon
 the text and token type for the rule. Note that, for efficiency reasons, the
 `CommonTokenStream` class does not support multiple token emissions.
 It is necessary to implement a queue of tokens instead a single variable for a token.
+
+= Few details about parsing Python =
+
+[http://effbot.org/zone/simple-top-down-parsing.htm Available here]
