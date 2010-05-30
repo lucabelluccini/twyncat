@@ -73,4 +73,6 @@ It is necessary to implement a queue of tokens instead a single variable for a t
 
 = Few details about parsing Python =
 
-[http://effbot.org/zone/simple-top-down-parsing.htm Available here]
+The following [http://effbot.org/zone/simple-top-down-parsing.htm website] explains in detail how to parse Python.
+
+[http://docs.python.org/release/2.6.4/reference/index.html Python 2.6 Language Reference] contains all the rules of the language.
