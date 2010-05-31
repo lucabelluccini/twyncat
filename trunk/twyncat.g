@@ -1,653 +1,357 @@
-grammar twyncat;
-
-options {
-	backtrack=true; // automatically resolve similar rules (which begin the same way)
-	//memoize=true; // use extra memory to speed up backtracking
-	//output=AST; // generate an abstract syntax tree from matched rules
-	//ASTLabelType=CommonTree; // class of tree node (must be cast from Object, otherwise)
-}
+grammar pythonTest;
 
 tokens {
-    INDENT;
-    DEDENT;
+	INDENT;
+	DEDENT;
 }
 
+@header {
+}
 
 @lexer::members {
-/** Handles context-sensitive lexing of implicit line joining such as
- *  the case where newline is ignored in cases like this:
- *  a = [3,
- *       4]
- */
+int nSpaces = 0;
 int implicitLineJoiningLevel = 0;
-int startPosition = -1;
+Stack<Integer> indentations = new Stack<Integer>();
+Stack<Token> tokens = new Stack<Token>();
+
+public void emit(Token token) {
+  state.token = token;
+  tokens.push(token);
+}
+public Token nextToken() {
+  super.nextToken();
+  if ( tokens.empty() ) {
+    if ( !indentations.empty() ) {
+      indentations.pop(); return new ClassicToken(DEDENT);
+    }
+    return Token.EOF_TOKEN;
+  }
+  return (Token)tokens.pop();
+}
 }
 
 // === Boolean Literal ===
 BOOLEANL
-	: 'True' | 'False';
-
-// === Variable Purpose (defined on declaration) ===
-VARDECLARATIONPURPOSE
-	: ( 'in' | 'out' | 'inout' )
-	;
-
-// === Variable attribute ===
-VARDECLATTRIBUTE
-	: ('retain' | 'persistent' | 'constant')
-	;
+  : 'True' | 'False'
+  ;
 
 // === Standard Data Type ===
-SDT	:
-	'bool'		// {True, False}
-	| 'byte'	// {0 to 255}
-	| 'word'	// {0 to 65535}
-	| 'dword'	// {0 to 4294967295}
-	| 'sint'	// {-128 to 127}
-	| 'usint'	// {0 to 255}
-	| 'int'		// {-32768 to 32767}
-	| 'uint'	// {0 to 65535}
-	| 'dint'	// {-2147483648 to 2147483647}
-	| 'udint'	// {0 to 4294967295}
-	| 'real'	// {~ -3.402823 x 10^38 to ~ 3.402823 x 1038}
-	| 'lreal'	// {~ -1.79769313486231E308 to ~ 1.79769313486232E308}
-	| 'string'	// {(dim) 'This is a String';}
-	| 'time'	// {T#0ms to T#71582m47s295ms} - T#9d8h7m6s5ms
-	| 'tod'		// {TOD#00:00 to TOD#1193:02:47.295} - TOD#00:00:00.001
-	| 'date'	// {D#1970-01-01 to D#2106-02-06} - D#1972-03-29
-	| 'dt'		// {DT#1970-01-01-00:00 to DT#2106-02-06-06:28:15}
-	;
+SDT :
+  'bool'    // {True, False}
+  | 'byte'  // {0 to 255}
+  | 'word'  // {0 to 65535}
+  | 'dword' // {0 to 4294967295}
+  | 'sint'  // {-128 to 127}
+  | 'usint' // {0 to 255}
+  | 'int'   // {-32768 to 32767}
+  | 'uint'  // {0 to 65535}
+  | 'dint'  // {-2147483648 to 2147483647}
+  | 'udint' // {0 to 4294967295}
+  | 'real'  // {~ -3.402823 x 10^38 to ~ 3.402823 x 1038}
+  | 'lreal' // {~ -1.79769313486231E308 to ~ 1.79769313486232E308}
+  | 'string'  // {(dim) 'This is a String';}
+  | 'time'  // {T#0ms to T#71582m47s295ms} - T#9d8h7m6s5ms
+  | 'tod'   // {TOD#00:00 to TOD#1193:02:47.295} - TOD#00:00:00.001
+  | 'date'  // {D#1970-01-01 to D#2106-02-06} - D#1972-03-29
+  | 'dt'    // {DT#1970-01-01-00:00 to DT#2106-02-06-06:28:15}
+  ;
 
-// === Identifier ===
-IDENTIFIER
-	:
-	( 'a' .. 'z' | 'A' .. 'Z' | '_') ( 'a' .. 'z' | 'A' .. 'Z' | '_' | '0' .. '9' )*
-	;
+// Only one per file
+program	:
+  'prog' ID ':' codeBlock
+  ;
+ 
+// TODO within : arrays, structures, strings (and respective initializations)
+definition :
+  (( 'in' | 'out' | 'inout' ) '.' )? (( 'persistent' | 'retain' | 'constant') '.') SDT ID (',' ID)+
+  ;
 
-/*
-=== ?!?!?!?!? ===
-  * Identifiers can be a single word or a structure component such as mystructure.mycomponent
-  * Structures, aliases, memory locations
-*/
-
-// === Single Logic Line ===
-/* A generic statement */
-singleLogicLine
-	: NEWLINE
-	| simpleStm
-	| compoundStm NEWLINE
-	;
-
-// === Structure Component ===
-structureComponent
-	: IDENTIFIER (DOT IDENTIFIER)*
-	;
-	
-functionDefinition
-	: 'def' IDENTIFIER parameters COLON suite
-	;
-	
-parameters 
-	: LPAREN (argumentList)? RPAREN
-	;
-	
-argumentList
-	:'uff'
-	;
-	
-varargslist : defparameter (options {greedy=true;}:COMMA defparameter)*
-            ;
-
-defparameter : IDENTIFIER (ASSIGN test)?
-             ;
+// "root" of TwinCAT grammar
+// TODO: functions, imports, ...
+file :
+  program EOF ;
 
 statement
-	: simpleStm
-	| compoundStm
-	;
+  : simpleStm
+  | compoundStm
+  ;
 
+// TODO: choose if we let more small statements per line
 simpleStm
-	: smallStm (options {greedy=true;}:SEMI smallStm)* (SEMI)? NEWLINE
-	;
+  : smallStm (SEMI smallStm)* (SEMI)? NEWLINE
+  ;
 
+// TODO: function calls
 smallStm
-	: exprStm
-        | flowStm
-        | declaration
-        ;
+  : exprStm
+  | flowStm
+  | definition
+  ;
+
 exprStm
-	: testList ( augAssign testList | assigns )?
-	;
-
-assigns
-	: ( assignTestList )+
-	;
-
-assignTestList
-	: ASSIGN testList
-	;
-
-augAssign
-	: PLUSEQUAL
-	| MINUSEQUAL
-	| STAREQUAL
-	| SLASHEQUAL
-	| PERCENTEQUAL
-	| ANDEQUAL
-	| OREQUAL
-	| LEFTSHIFTEQUAL
-	| RIGHTSHIFTEQUAL
-	;
+  : 'expr'
+  ;
 
 flowStm
-	: returnStm
-	| exitStm
-	;
+  : returnStm
+  | exitStm
+  ;
 
 exitStm
-	: 'exit'
-	;
-
+  : 'exit'
+  ;
 
 returnStm
-	: 'return'
-	;	
+  : 'return'
+  ; 
 
 compoundStm
-	: ifStm
-	| caseStm
-	| forStm
-	| whileStm
-	| repeatuntilStm
-	;
+  : ifStm
+  | caseStm
+  | forStm
+  | whileStm
+  | repeatUntilStm
+  ;
 
 ifStm
-	: 'if' test COLON suite elifClause*  ('else' COLON suite)?
-	;
+  : 'if' test COLON codeBlock elifClause* ('else' COLON codeBlock)?
+  ;
 
 elifClause
-	: 'elif' test COLON suite
-	;
+  : 'elif' test COLON codeBlock
+  ;
 
 caseStm
-	: 'case' test COLON NEWLINE INDENT caseElementsStm DEDENT
-	;
-	
+  : 'case' test COLON NEWLINE INDENT caseElementsStm DEDENT
+  ;
+  
 caseElementsStm
-	: test COLON suite
-	| 'default' COLON suite
-	;
+  : ( test COLON codeBlock )+ 'default' COLON codeBlock
+  ;
 
 forStm
-	: 'for' IDENTIFIER 'in' '{' test ':' test ':' test '}' COLON suite
-	;
-	
+  : 'for' ID 'in' '{' test ':' test ':' test '}' COLON codeBlock
+  ;
+  
 whileStm
-	: 'while' test COLON suite
-	;
+  : 'while' test COLON codeBlock
+  ;
 
-repeatuntilStm
-	: 'repeat' 'until' test COLON suite
-	;
-	
-repeatuntilHeaderStm
-	: 'repeat' COLON NEWLINE INDENT suite DEDENT 'until' test
-	;
-	
-suite
-	: simpleStm
-	| NEWLINE INDENT (statement)+ DEDENT
-	;
+repeatUntilStm
+  : 'repeat' codeBlock 'until' test
+  ;
 
+codeBlock
+  : simpleStm
+  | NEWLINE INDENT ( statement )+ DEDENT
+  ;
+
+// TODO: implement
 test
-	: orTest
-	( ('if' orTest 'else') => 'if' orTest 'else' test)?
-	;
+  : 'test'
+  ;
 
-orTest
-	: andTest ('or' andTest)*
-        ;
+ID  : 
+  ('a'..'z'|'A'..'Z'|'_') ('a'..'z'|'A'..'Z'|'0'..'9'|'_')*
+  ;
 
-andTest
-	: notTest ('and' notTest)*
-        ;
-
-notTest
-	: 'not' notTest
-	| comparison
-	;
-	
-comparison
-	: expr (comparisonOp expr)*
-	;
-
-comparisonOp 
-	: LESS
-        | GREATER
-        | EQUAL
-        | GREATEREQUAL
-        | LESSEQUAL
-        | ALT_NOTEQUAL
-        | NOTEQUAL
-        //| 'is'
-        //| 'is' NOT
-        ;
-
-expr
-	: xorExpr (VBAR xorExpr)*
-	;
-
-xorExpr
-	: andExpr (CIRCUMFLEX andExpr)*
-	;
-
-andExpr
-	: shiftExpr (AMPER shiftExpr)*
-	;
-
-shiftExpr
-	: arithExpr ((LEFTSHIFT|RIGHTSHIFT) arithExpr)*
-	;
-
-arithExpr
-	: term ((PLUS|MINUS) term)*
-	;
-
-term
-	: factor ((STAR | SLASH | PERCENT | DOUBLESLASH ) factor)*
-	;
-
-factor
-	: PLUS factor
-	| MINUS factor
-	| TILDE factor
-	| power
-	;
-
-power	
-	: atom (trailer)* (options {greedy=true;}:DOUBLESTAR factor)?
-	;
-
-atom
-	: literal
-	| IDENTIFIER
-	;
-
-trailer
-	: LPAREN (arglist)? RPAREN
-	| DOT IDENTIFIER
-	;
-
-testList
-    : test (options {k=2;}: COMMA test)* (COMMA)?
-    ;
-
-arglist
-	: argument (COMMA argument)*
-        ;
-
-argument
-	: test ( ASSIGN test )?
-        ;
-
-// === File ===
-file
-	: imports functions program EOF
-	;
-
-// === Imports ===
-// TODO: manage imports
-imports
-	: ( singleImport )*
-	;
-
-singleImport
-	: 'import' IDENTIFIER ( '.' IDENTIFIER )* NEWLINE
-	;
-
-// === Functions ===
-functions
-	: ( functionDefinition )*
-	;
-
-// === Program ===
-program
-	: 'prog' IDENTIFIER ':' suite
-	;
-
-// === Declaration ===
-/* EXAMPLES
-in.retain.T_DCTIME BufferLatchPosEL1252ACh1, 
-                diff1[1:250000],              
-                diff2[1:250000], 
-                diff3[1:250000], 
-                diff4[1:250000], 
-                diff5[1:16000]
-bool myflag = True, yourflag = False, anyoneflag
-out.constant.dint myConstant = 2147483640
-*/
-declaration
-	: declarationHeader varDeclarationList
-	;
-
-// === Declaration Header ===
-/* EXAMPLES
-bool
-mytype
-out.bool
-retain.bool
-out.persistent.bool
-inout.retain.mytype
-*/
-declarationHeader
-	: ( VARDECLARATIONPURPOSE '.' )? ( VARDECLATTRIBUTE '.' )? ( SDT | IDENTIFIER )
-	;
-
-// === Variable Declaration List ===
-/* EXAMPLES
-myidentifier, mysecondidentifier = 3, mythirdarray[1:40]
-mynewidentifier
-*/
-varDeclarationList
-	: varDeclaration ( ',' varDeclaration )*
-	;
-
-// === Variable Declaration ===
-/* EXAMPLES
-myidentifier
-my2ndidentifier = True
-*/
-varDeclaration
-	: varIdentifierDeclaration ( '=' varDeclarationConstantExpression )?
-	;
-
-// === Variable Constant Expression ===
-/* EXAMPLES
-3000
-100e+2
-True
-t!1d2h3m4s567ms
-*/
-varDeclarationConstantExpression
-	: IDENTIFIER ( '.' IDENTIFIER )*	// Such as MYCONSTANT
-	| literal				// Such as 1000 or True or t!1d2h3m4s567ms
-	| arrayConstantExpression		// Such as [1,6,8] or [t!1d2h3m4s567ms, t!1d2h3m]
-	| structureConstantExpression		// Such as ( myElem = 8, my2ndElem = 10 )
-	;
-
-// === Variable Identifier Declaration
-/* EXAMPLE
-myVar
-myVar[1:40]
-mySecond[1:10][1:100]
-*/
-varIdentifierDeclaration
-	: IDENTIFIER ( identifierArrayMod )?
-	;
-
-// === Identifier Array Mod
-/* EXAMPLE
-[10:400]
-[1:10][1:20]
-*/
-identifierArrayMod
-	: ( LBRACK arrayRange RBRACK )
-	| ( LBRACK arrayRange RBRACK ) ( LBRACK arrayRange RBRACK )
-	| ( LBRACK arrayRange RBRACK ) ( LBRACK arrayRange RBRACK ) ( LBRACK arrayRange RBRACK )
-	;
-
-arrayRange
-	: DECIMALL ':' DECIMALL
-	;
-
-// === Array Constant Expression ===
-/* EXAMPLE
-[1,2,3,4,5]
-[1,2][3,4][5,6]
-*/
-arrayConstantExpression
-	: ( LBRACK literalsList RBRACK )
-	| ( LBRACK literalsList RBRACK ) ( LBRACK literalsList RBRACK )
-	| ( LBRACK literalsList RBRACK ) ( LBRACK literalsList RBRACK ) ( LBRACK literalsList RBRACK )
-	;
-
-// === Literals List ===
-/* EXAMPLE
-o!66
-h!AF,h!1024,b!0001010
-*/	
-literalsList
-	: literal ( ',' literal )*
-	;
+singleFileInput
+  : (NEWLINE | statement)* EOF
+  ;
 
 // === Literals ===
 // TODO: String initialization
 literal
-	: stringL
-	| binaryL
-	| HEXL
-	| DECIMALL
-	| octalL
-	| timeL
-	| todL
-	| dateL
-	| datetimeL
-	| floatingpointL
-	| BOOLEANL
-	;
-
-// === Structure Constant Expression ===
-/* EXAMPLE
-( member = 3 )
-( member1 = h!FF, member2 = o!40 )
-*/
-structureConstantExpression
-	: ( LPAREN ( IDENTIFIER '=' varDeclarationConstantExpression ) ( ',' IDENTIFIER '=' varDeclarationConstantExpression )* RPAREN )	// Shouldn't use varIdentifierDeclaration cause of cannot re-define arrays on the fly (Is that right?)
-	;
-
-
-floatingpointL
-	:   ('0'..'9')+ '.' ('0'..'9')* Exponent?
-	|   '.' ('0'..'9')+ Exponent?
-	|   ('0'..'9')+ Exponent
-	|   ('0'..'9')+ Exponent?
-	;
+  : 
+  //stringL |
+  BINARYL
+  | HEXL
+  | DECIMALL
+  | OCTALL
+  | timeL
+  | todL
+  | dateL
+  | datetimeL
+  | FLOATINGPOINTL
+  | BOOLEANL
+  ;
 
 fragment
-Exponent : ('e'|'E') ('+'|'-')? ('0'..'9')+ ;	
+FLOATINGPOINTL
+  :   ('0'..'9')* '.' ('0'..'9')+ Exponent?
+  |   ('0'..'9')+ Exponent?
+  ;
 
+fragment
+Exponent : ('e'|'E') ('+'|'-')? ('0'..'9')+ ; 
 
-	
-binaryL
-	: 'b!' ('0'..'1')+
-	;
-	
+BINARYL
+  : 'b!' ('0'..'1')+
+  ;
+  
 HEXL
-	: 'h!' HEXDIGIT+
-	;
+  : 'h!' HEXDIGIT+
+  ;
 
 fragment
 HEXDIGIT
-	: ('0'..'9'|'a'..'f'|'A'..'F')
-	;
-	
-fragment
+  : ('0'..'9'|'a'..'f'|'A'..'F')
+  ;
+  
 DECIMALL
-	: ('0' | '1'..'9' '0'..'9'*)
-	;
+  : ('0' | '1'..'9' '0'..'9'*)
+  ;
 
-octalL
-	: 'o!' ('0'..'7')+
-	;
+OCTALL
+  : 'o!' ('0'..'7')+
+  ;
 
 timeL
-	: 't!' ( DECIMALL 'd' ) ( DECIMALL 'h' )? ( DECIMALL 'm' )? ( DECIMALL 's' )? ( DECIMALL 'ms' )? 
-	| 't!' ( DECIMALL 'd' )? ( DECIMALL 'h' ) ( DECIMALL 'm' )? ( DECIMALL 's' )? ( DECIMALL 'ms' )? 
-	| 't!' ( DECIMALL 'd' )? ( DECIMALL 'h' )? ( DECIMALL 'm' ) ( DECIMALL 's' )? ( DECIMALL 'ms' )? 
-	| 't!' ( DECIMALL 'd' )? ( DECIMALL 'h' )? ( DECIMALL 'm' )? ( DECIMALL 's' ) ( DECIMALL 'ms' )? 
-	| 't!' ( DECIMALL 'd' )? ( DECIMALL 'h' )? ( DECIMALL 'm' )? ( DECIMALL 's' )? ( DECIMALL 'ms' ) 
-	;
+  : 't!' ( DECIMALL 'd' ) ( DECIMALL 'h' )? ( DECIMALL 'm' )? ( DECIMALL 's' )? ( DECIMALL 'ms' )? 
+  | 't!' ( DECIMALL 'd' )? ( DECIMALL 'h' ) ( DECIMALL 'm' )? ( DECIMALL 's' )? ( DECIMALL 'ms' )? 
+  | 't!' ( DECIMALL 'd' )? ( DECIMALL 'h' )? ( DECIMALL 'm' ) ( DECIMALL 's' )? ( DECIMALL 'ms' )? 
+  | 't!' ( DECIMALL 'd' )? ( DECIMALL 'h' )? ( DECIMALL 'm' )? ( DECIMALL 's' ) ( DECIMALL 'ms' )? 
+  | 't!' ( DECIMALL 'd' )? ( DECIMALL 'h' )? ( DECIMALL 'm' )? ( DECIMALL 's' )? ( DECIMALL 'ms' ) 
+  ;
 
 todL
-	: 'tod!' DECIMALL ':' DECIMALL ':' DECIMALL ( '.' DECIMALL )?
-	;
+  : 'tod!' DECIMALL ':' DECIMALL ':' DECIMALL ( '.' DECIMALL )?
+  ;
 
 dateL
-	: 'd!' DECIMALL '-' DECIMALL '-' DECIMALL
-	;
+  : 'd!' DECIMALL '-' DECIMALL '-' DECIMALL
+  ;
 
 datetimeL
-	: 'dt!' DECIMALL '-' DECIMALL '-' DECIMALL '-' DECIMALL ':' DECIMALL
-	;
-	
+  : 'dt!' DECIMALL '-' DECIMALL '-' DECIMALL '-' DECIMALL ':' DECIMALL
+  ;
+  
 CHARACTERL
-	:   '\'' ( EscapeSequence | ~('\''|'\\') ) '\''
-	;
+  :   '\'' ( EscapeSequence | ~('\''|'\\') ) '\''
+  ;
 
 stringL
-	:  '"' ( EscapeSequence | ~('\\'|'"') )* '"'
-	;
+  :  '"' ( EscapeSequence | ~('\\'|'"') )* '"'
+  ;
 
 fragment
 EscapeSequence
-	:   '\\' ('b'|'t'|'n'|'f'|'r'|'\"'|'\''|'\\')
-	|   OctalEscape
-	;
-	
+  :   '\\' ('b'|'t'|'n'|'f'|'r'|'\"'|'\''|'\\')
+  |   OctalEscape
+  ;
+  
 fragment
 OctalEscape
-	:   '\\' ('0'..'3') ('0'..'7') ('0'..'7')
-	|   '\\' ('0'..'7') ('0'..'7')
-	|   '\\' ('0'..'7')
-	;
+  :   '\\' ('0'..'3') ('0'..'7') ('0'..'7')
+  |   '\\' ('0'..'7') ('0'..'7')
+  |   '\\' ('0'..'7')
+  ;
 
-/* TODO
-//7.4                     # Decimal Number
-//1.64e+009               # Decimal Number
-\$                      # Dollar signs
-\'                      # Single quotation mark
-\l                      # Line feed
-\n                      # New line
-\p                      # Page feed
-\r                      # Line break
-\t                      # Tab
-*/
-
-/*
-Match various string types.  Note that greedy=false implies '''
-should make us exit loop not continue.
-*/
-STRING
-    :   ('r'|'u'|'ur')?
-        (   '\'\'\'' (options {greedy=false;}:TRIAPOS)* '\'\'\''
-        |   '"""' (options {greedy=false;}:TRIQUOTE)* '"""'
-        |   '"' (ESC|~('\\'|'\n'|'"'))* '"'
-        |   '\'' (ESC|~('\\'|'\n'|'\''))* '\''
-        )
-    ;
-
-/** the two '"'? cause a warning -- is there a way to avoid that? */
-fragment
-TRIQUOTE
-    : '"'? '"'? (ESC|~('\\'|'"'))+
-    ;
-
-/** the two '\''? cause a warning -- is there a way to avoid that? */
-fragment
-TRIAPOS
-    : '\''? '\''? (ESC|~('\\'|'\''))+
-    ;
-
-fragment
-ESC
-    :    '\\' .
-    ;
-
-
-NEWLINE	:   (( FF )?( CR )? '\n' )+
-        {if ( startPosition==0 || implicitLineJoiningLevel>0 )
-            $channel=HIDDEN;
-        }
-    ;
-
-WS  :    {startPosition>0}?=> (' '| TAB | FF )+ {$channel=HIDDEN;}
-    ;
-
-LEADING_WS
-@init {
-    int spaces = 0;
-}
-    :   {startPosition==0}?=>		// If it is starting from first column
-        (   {implicitLineJoiningLevel>0}? ( ' ' | TAB )+ {$channel=HIDDEN;}	// It is within a no-indentation context (ignores them)
-	|    ( ' ' { spaces++; } | TAB { spaces += 8; spaces -= (spaces \% 8); } )+ 	// Counts how many ' ' will be generated
-        {
-            // Make a string of n spaces where n is column number - 1
-            char[] indentation = new char[spaces];
-            for (int i=0; i<spaces; i++) {
-                indentation[i] = ' ';
-            }
-            String s = new String(indentation);
-            emit(new ClassicToken(LEADING_WS,new String(indentation)));
-            }
-            // Kill trailing newline if present and then ignore
-            ( ('\r')? '\n' {if (token!=null) token.setChannel(HIDDEN); else $channel=HIDDEN;})*
-        )
-    ;
-
-COMMENT
-@init {
-    $channel=HIDDEN;
-}
-    :    {startPosition==0}?=> ( WS | TAB )* HASH (~'\n')* '\n'+
-    |    {startPosition>0}?=> HASH (~'\n')* // let NEWLINE handle \n unless char pos==0 for '#'
-    ;
-
-FF		: '\u000C';
-HASH		: '#';
-TAB		: '\t';
-CR		: '\r';
-LPAREN		: '(' {implicitLineJoiningLevel++;} ;
-RPAREN		: ')' {implicitLineJoiningLevel--;} ;
-LBRACK		: '[' {implicitLineJoiningLevel++;} ;
-RBRACK		: ']' {implicitLineJoiningLevel--;} ;
-COLON		: ':' ;
-SEMI		: ';' ;
-PLUS		: '+' ;
-MINUS		: '-' ;
-STAR		: '*' ;
-SLASH		: '/' ;
-VBAR		: '|' ;
-AMPER		: '&' ;
-LESS		: '<' ;
-GREATER		: '>' ;
-ASSIGN		: '=' ;
-PERCENT		: '%' ;
-BACKQUOTE	: '`' ;
-LCURLY		: '{' {implicitLineJoiningLevel++;} ;
-RCURLY		: '}' {implicitLineJoiningLevel--;} ;
-CIRCUMFLEX	: '^' ;
-TILDE		: '~' ;
-EQUAL		: '==' ;
-NOTEQUAL	: '!=' ;
-ALT_NOTEQUAL	: '<>' ;
-LESSEQUAL	: '<=' ;
-LEFTSHIFT	: '<<' ;
-GREATEREQUAL	: '>=' ;
-RIGHTSHIFT	: '>>' ;
-PLUSEQUAL	: '+=' ;
-MINUSEQUAL	: '-=' ;
-DOUBLESTAR	: '**' ;
-STAREQUAL	: '*=' ;
-DOUBLESLASH	: '//' ;
-SLASHEQUAL	: '/=' ;
-OREQUAL		: '|=' ;
-PERCENTEQUAL	: '%=' ;
-ANDEQUAL	: '&=' ;
-CIRCUMFLEXEQUAL	: '^=' ;
-LEFTSHIFTEQUAL	: '<<=' ;
-RIGHTSHIFTEQUAL	: '>>=' ;
-DOUBLESTAREQUAL	: '**=' ;
+FF    : '\u000C';
+HASH    : '#';
+TAB   : '\t';
+CR    : '\r';
+LPAREN    : '(' {implicitLineJoiningLevel++;} ;
+RPAREN    : ')' {implicitLineJoiningLevel--;} ;
+LBRACK    : '[' {implicitLineJoiningLevel++;} ;
+RBRACK    : ']' {implicitLineJoiningLevel--;} ;
+COLON   : ':' ;
+SEMI    : ';' ;
+PLUS    : '+' ;
+MINUS   : '-' ;
+STAR    : '*' ;
+SLASH   : '/' ;
+VBAR    : '|' ;
+AMPER   : '&' ;
+LESS    : '<' ;
+GREATER   : '>' ;
+ASSIGN    : '=' ;
+PERCENT   : '%' ;
+BACKQUOTE : '`' ;
+LCURLY    : '{' {implicitLineJoiningLevel++;} ;
+RCURLY    : '}' {implicitLineJoiningLevel--;} ;
+CIRCUMFLEX  : '^' ;
+TILDE   : '~' ;
+EQUAL   : '==' ;
+NOTEQUAL  : '!=' ;
+ALT_NOTEQUAL  : '<>' ;
+LESSEQUAL : '<=' ;
+LEFTSHIFT : '<<' ;
+GREATEREQUAL  : '>=' ;
+RIGHTSHIFT  : '>>' ;
+PLUSEQUAL : '+=' ;
+MINUSEQUAL  : '-=' ;
+DOUBLESTAR  : '**' ;
+STAREQUAL : '*=' ;
+DOUBLESLASH : '//' ;
+SLASHEQUAL  : '/=' ;
+OREQUAL   : '|=' ;
+PERCENTEQUAL  : '%=' ;
+ANDEQUAL  : '&=' ;
+CIRCUMFLEXEQUAL : '^=' ;
+LEFTSHIFTEQUAL  : '<<=' ;
+RIGHTSHIFTEQUAL : '>>=' ;
+DOUBLESTAREQUAL : '**=' ;
 DOUBLESLASHEQUAL: '//=' ;
-DOT		: '.' ;
-COMMA		: ',';
-AT		: '@' ;
+DOT   : '.' ;
+COMMA   : ',';
+AT    : '@' ;
+
+NEWLINE :
+    (( FF )?( CR )? '\n' )+
+    { if ( $start == 0 || implicitLineJoiningLevel > 0 )
+        $channel=HIDDEN;
+    }
+    ;
+
+WS  :    
+    { getCharPositionInLine() > 0 }?=>
+    (' '| TAB | FF )+ { $channel = HIDDEN; }
+    ;
+
+// TODO: ignore this rule using a flag when implicitjoiningline > 0
+LEADINGWS	
+@init{
+	int nSpaces = 0;
+}	:
+	{ getCharPositionInLine() == 0 }?=> 
+		( ' ' { nSpaces++; }
+		| '\t' { nSpaces += 8; nSpaces -= (nSpaces \% 8); }
+		)+
+		{
+			int lastIndentation;
+			if (indentations.empty())
+				lastIndentation = 0;
+			else
+				lastIndentation = indentations.peek();
+			if ( nSpaces > lastIndentation ) {
+				indentations.push(nSpaces);
+				char[] spaces = new char[nSpaces];
+				for(int i = 0; i < nSpaces; i++)
+					spaces[i] = ' ';
+				Token t = new ClassicToken(INDENT, new String(spaces)); t.setLine($line);
+				emit( t );
+				//System.out.println("INDENT");
+			} else if ( nSpaces < lastIndentation ) {
+				indentations.pop();
+				char[] spaces = new char[nSpaces];
+				for(int i = 0; i < nSpaces; i++)
+					spaces[i] = ' ';
+				Token t = new ClassicToken(DEDENT, new String(spaces)); t.setLine($line);
+				emit( t );
+				if ( indentations.search(nSpaces) != -1 ) {
+					while( indentations.empty() == false) {
+				    if( nSpaces > indentations.peek() ) { 
+	            indentations.pop();
+	            t = new ClassicToken(DEDENT, new String(" ")); t.setLine($line);
+							emit( t );
+							System.out.println("!");
+						} else { break; }
+					}
+				} else {
+					System.out.println("ERROR");
+				}
+			}
+			$channel = HIDDEN;
+		}
+	;
