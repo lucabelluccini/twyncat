@@ -5,7 +5,7 @@
   * Eclipse 3.5+ (Ganymede, Galileo...)
   * DLTK - Repository: http://download.eclipse.org/technology/dltk/updates/
   * ZEST - Repository: http://download.eclipse.org/tools/gef/updates/releases/
-  * AntlrV3IDE - Repository: http://antlrv3ide.sourceforge.net/
+  * AntlrV3IDE - Repository: http://antlrv3ide.sourceforge.net/update
   * Subclipse - Repository: http://subclipse.tigris.org/update_1.6.x
 
 = Details =
