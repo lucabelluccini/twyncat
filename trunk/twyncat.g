@@ -63,7 +63,7 @@ program	:
  
 // TODO within : arrays, structures, strings (and respective initializations)
 definition :
-  (( 'in' | 'out' | 'inout' ) '.' )? (( 'persistent' | 'retain' | 'constant') '.') SDT ID (',' ID)+
+  (( 'in' | 'out' | 'inout' ) '.' )? (( 'persistent' | 'retain' | 'constant') '.')? SDT ID (',' ID)*
   ;
 
 // "root" of TwinCAT grammar
@@ -88,6 +88,7 @@ smallStm
   | definition
   ;
 
+// TODO: implement http://docs.python.org/release/2.6.4/reference/grammar.html
 exprStm
   : 'expr'
   ;
@@ -138,7 +139,7 @@ whileStm
   ;
 
 repeatUntilStm
-  : 'repeat' codeBlock 'until' test
+  : 'repeat' COLON codeBlock 'until' test NEWLINE
   ;
 
 codeBlock
@@ -146,10 +147,32 @@ codeBlock
   | NEWLINE INDENT ( statement )+ DEDENT
   ;
 
-// TODO: implement
+// TODO: implement http://docs.python.org/release/2.6.4/reference/grammar.html
 test
   : 'test'
   ;
+
+/*
+test: or_test ['if' or_test 'else' test] | lambdef
+or_test: and_test ('or' and_test)*
+and_test: not_test ('and' not_test)*
+not_test: 'not' not_test | comparison
+comparison: expr (comp_op expr)*
+comp_op: '<'|'>'|'=='|'>='|'<='|'<>'|'!='|'in'|'not' 'in'|'is'|'is' 'not'
+expr: xor_expr ('|' xor_expr)*
+xor_expr: and_expr ('^' and_expr)*
+and_expr: shift_expr ('&' shift_expr)*
+shift_expr: arith_expr (('<<'|'>>') arith_expr)*
+arith_expr: term (('+'|'-') term)*
+term: factor (('*'|'/'|'%'|'//') factor)*
+factor: ('+'|'-'|'~') factor | power
+power: atom trailer* ['**' factor]
+atom: ('(' [yield_expr|testlist_gexp] ')' |
+       '[' [listmaker] ']' |
+       '{' [dictmaker] '}' |
+       '`' testlist1 '`' |
+       NAME | NUMBER | STRING+)
+*/
 
 ID  : 
   ('a'..'z'|'A'..'Z'|'_') ('a'..'z'|'A'..'Z'|'0'..'9'|'_')*
@@ -340,14 +363,14 @@ LEADINGWS
 				Token t = new ClassicToken(DEDENT, new String(spaces)); t.setLine($line);
 				emit( t );
 				if ( indentations.search(nSpaces) != -1 ) {
-					while( indentations.empty() == false) {
-				    if( nSpaces > indentations.peek() ) { 
-	            indentations.pop();
-	            t = new ClassicToken(DEDENT, new String(" ")); t.setLine($line);
-							emit( t );
-							System.out.println("!");
-						} else { break; }
-					}
+				    while( indentations.empty() == false) {
+				    	if( nSpaces > indentations.peek() ) { 
+	           				indentations.pop();
+					        t = new ClassicToken(DEDENT, new String(" ")); t.setLine($line);
+						emit( t );
+						System.out.println("!");
+					} else { break; }
+				    }
 				} else {
 					System.out.println("ERROR");
 				}
