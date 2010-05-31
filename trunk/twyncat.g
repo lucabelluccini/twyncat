@@ -5,28 +5,33 @@ tokens {
 	DEDENT;
 }
 
-@header {
+@lexer::header {
+import java.util.LinkedList;
 }
 
 @lexer::members {
 int nSpaces = 0;
 int implicitLineJoiningLevel = 0;
 Stack<Integer> indentations = new Stack<Integer>();
-Stack<Token> tokens = new Stack<Token>();
+//Stack<Token> tokens = new Stack<Token>();
+LinkedList<Token> tokens = new LinkedList<Token>();
 
 public void emit(Token token) {
   state.token = token;
-  tokens.push(token);
+  //tokens.push(token);
+  tokens.add(token);
 }
 public Token nextToken() {
   super.nextToken();
-  if ( tokens.empty() ) {
+  if ( tokens.size() == 0 ) {
     if ( !indentations.empty() ) {
+      // indentations.pop(); return new ClassicToken(DEDENT);
       indentations.pop(); return new ClassicToken(DEDENT);
     }
     return Token.EOF_TOKEN;
   }
-  return (Token)tokens.pop();
+  // return (Token)tokens.pop();
+  return (Token)tokens.remove();
 }
 }
 
@@ -85,14 +90,30 @@ simpleStm
 smallStm
   : exprStm
   | flowStm
+  | repeatUntilStm
   | definition
   ;
 
 // TODO: implement http://docs.python.org/release/2.6.4/reference/grammar.html
 exprStm
-  : 'expr'
+  : test (augAssign (test)
+  | ('=' (test))*)
   ;
 
+augAssign
+	: '+=' 
+	| '-=' 
+	| '*=' 
+	| '/=' 
+	| '%=' 
+	| '&=' 
+	| '|=' 
+	| '^=' 
+	| '<<='
+	| '>>='
+	| '**='
+	| '//='
+	;
 flowStm
   : returnStm
   | exitStm
@@ -111,7 +132,7 @@ compoundStm
   | caseStm
   | forStm
   | whileStm
-  | repeatUntilStm
+  //| repeatUntilStm
   ;
 
 ifStm
@@ -139,7 +160,7 @@ whileStm
   ;
 
 repeatUntilStm
-  : 'repeat' COLON codeBlock 'until' test NEWLINE
+  : 'repeat' COLON codeBlock 'until' test
   ;
 
 codeBlock
@@ -149,30 +170,80 @@ codeBlock
 
 // TODO: implement http://docs.python.org/release/2.6.4/reference/grammar.html
 test
-  : 'test'
+  : orTest
   ;
 
-/*
-test: or_test ['if' or_test 'else' test] | lambdef
-or_test: and_test ('or' and_test)*
-and_test: not_test ('and' not_test)*
-not_test: 'not' not_test | comparison
-comparison: expr (comp_op expr)*
-comp_op: '<'|'>'|'=='|'>='|'<='|'<>'|'!='|'in'|'not' 'in'|'is'|'is' 'not'
-expr: xor_expr ('|' xor_expr)*
-xor_expr: and_expr ('^' and_expr)*
-and_expr: shift_expr ('&' shift_expr)*
-shift_expr: arith_expr (('<<'|'>>') arith_expr)*
-arith_expr: term (('+'|'-') term)*
-term: factor (('*'|'/'|'%'|'//') factor)*
-factor: ('+'|'-'|'~') factor | power
-power: atom trailer* ['**' factor]
-atom: ('(' [yield_expr|testlist_gexp] ')' |
-       '[' [listmaker] ']' |
-       '{' [dictmaker] '}' |
-       '`' testlist1 '`' |
-       NAME | NUMBER | STRING+)
-*/
+orTest	:
+	andTest ('or' andTest)*
+	;
+
+andTest	:
+	notTest ('and' notTest)*
+	;
+
+notTest :
+	 'not' notTest | comparison
+	;
+	
+comparison
+	: expr (compOperator expr)*
+	;
+	
+compOperator
+	: '<'
+	| '>'
+	| '=='
+	| '>='
+	| '<='
+	| '<>'
+	| '!='
+	//| 'in'
+	//| 'not' 'in'
+	//| 'is'
+	//| 'is' 'not'
+	;
+	
+expr:
+	xorExpr ('|' xorExpr)*
+	;
+
+xorExpr: 
+	andExpr ('^' andExpr)*
+	;
+	
+andExpr:
+	shiftExpr ('&' shiftExpr)*
+	;
+	
+shiftExpr:
+	arithExpr (('<<'|'>>') arithExpr)*
+	;
+	
+arithExpr:
+	term (('+'|'-') term)*
+	;
+	
+term:
+	factor (('*'|'/'|'%'|'//') factor)*
+	;
+	
+factor: 
+	('+'|'-'|'~') factor | power
+	;
+	
+power
+	: atom trailer* ('**' factor)?
+	;
+atom
+	: ID
+	| FLOATINGPOINTL
+	| DECIMALL
+	| stringL+
+	;
+	
+trailer
+	: ('.' ID)+
+	;
 
 ID  : 
   ('a'..'z'|'A'..'Z'|'_') ('a'..'z'|'A'..'Z'|'0'..'9'|'_')*
@@ -354,21 +425,27 @@ LEADINGWS
 					spaces[i] = ' ';
 				Token t = new ClassicToken(INDENT, new String(spaces)); t.setLine($line);
 				emit( t );
-				//System.out.println("INDENT");
+				System.out.println("IND Spaces: " + nSpaces + " at line " + $line);
 			} else if ( nSpaces < lastIndentation ) {
-				indentations.pop();
-				char[] spaces = new char[nSpaces];
-				for(int i = 0; i < nSpaces; i++)
-					spaces[i] = ' ';
-				Token t = new ClassicToken(DEDENT, new String(spaces)); t.setLine($line);
-				emit( t );
 				if ( indentations.search(nSpaces) != -1 ) {
+				    boolean first = true;
 				    while( indentations.empty() == false) {
-				    	if( nSpaces > indentations.peek() ) { 
-	           				indentations.pop();
-					        t = new ClassicToken(DEDENT, new String(" ")); t.setLine($line);
-						emit( t );
-						System.out.println("!");
+				    	if( nSpaces < indentations.peek() ) { 
+				    		if(first){
+				    			first = false;
+				    			int nSp = indentations.pop();
+				    			char[] spaces = new char[nSp];
+							for(int i = 0; i < nSp; i++)
+								spaces[i] = ' ';
+				    			Token t = new ClassicToken(DEDENT, new String(spaces)); t.setLine($line);
+				    			emit(t);
+							System.out.println("DED Spaces: " + nSp + " at line " + $line);
+				    		} else {
+		           				int nSp = indentations.pop();
+							Token t = new ClassicToken(DEDENT, new String("")); t.setLine($line);
+							emit(t);
+							System.out.println("DED Spaces: " + nSp + " at line " + $line);
+						}
 					} else { break; }
 				    }
 				} else {
