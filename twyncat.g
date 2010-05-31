@@ -1,4 +1,4 @@
-grammar pythonTest;
+grammar twyncat;
 
 tokens {
 	INDENT;
