@@ -13,24 +13,20 @@ import java.util.LinkedList;
 int nSpaces = 0;
 int implicitLineJoiningLevel = 0;
 Stack<Integer> indentations = new Stack<Integer>();
-//Stack<Token> tokens = new Stack<Token>();
 LinkedList<Token> tokens = new LinkedList<Token>();
 
 public void emit(Token token) {
   state.token = token;
-  //tokens.push(token);
   tokens.add(token);
 }
 public Token nextToken() {
   super.nextToken();
   if ( tokens.size() == 0 ) {
     if ( !indentations.empty() ) {
-      // indentations.pop(); return new ClassicToken(DEDENT);
       indentations.pop(); return new ClassicToken(DEDENT);
     }
     return Token.EOF_TOKEN;
   }
-  // return (Token)tokens.pop();
   return (Token)tokens.remove();
 }
 }
@@ -236,9 +232,14 @@ power
 	;
 atom
 	: ID
-	| FLOATINGPOINTL
+/*	| FLOATINGPOINTL
 	| DECIMALL
+	| HEXL
+	| BINARYL
+	|  
 	| stringL+
+*/
+	| literal
 	;
 	
 trailer
