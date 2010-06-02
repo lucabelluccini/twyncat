@@ -42,7 +42,9 @@ public Token nextToken() {
     // Check if indentations stack is empty
     if ( !indentations.empty() ) {
       // Return DEDENT tokens until stack is empty
-      indentations.pop(); return new ClassicToken(DEDENT);
+      indentations.pop(); 
+      System.out.println("DED at EOF");
+      return new ClassicToken(DEDENT);
     }
     return Token.EOF_TOKEN;
   }
@@ -109,7 +111,7 @@ pointer	:
 	;
 
 // TODO: init at value ID = 3, ID2 = 7...
-enum	:
+enumeration	:
 	'enum' '.' ID '=' '{' ID (',' ID)* '}'
 	;
 	
@@ -149,7 +151,7 @@ globalStm
 smallGlobalStm
 	: alias
 	| pointer
-	| enum
+	| enumeration
 	| globaldefinition
 	| structure
 	;
@@ -346,6 +348,8 @@ literal
   | datetimeL
   | FLOATINGPOINTL
   | BOOLEANL
+  | CHARACTERL
+  | stringL
   ;
 
 fragment
@@ -474,8 +478,8 @@ COMMENT
 @init {
 	$channel = HIDDEN;
 }
-	: { getCharPositionInLine() == 0 }?=>	'#' ~('\n')+ NEWLINE
-	| { getCharPositionInLine() > 0 }?=>'#' ~('\n')+ 
+	: { getCharPositionInLine() == 0 }?=> '#' ~('\n')+ NEWLINE
+	| { getCharPositionInLine() > 0 }?=> '#' ~('\n')+ 
 ;
 */
 
@@ -526,8 +530,8 @@ LEADINGWS
 				    		if(first){
 				    			first = false;
 				    			int nSp = indentations.pop();
-				    			char[] spaces = new char[nSp];
-							for(int i = 0; i < nSp; i++)
+				    			char[] spaces = new char[nSpaces];
+							for(int i = 0; i < nSpaces; i++)
 								spaces[i] = ' ';
 				    			Token t = new ClassicToken(DEDENT, new String(spaces)); t.setLine($line);
 				    			emit(t);
