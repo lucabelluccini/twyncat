@@ -112,7 +112,7 @@ pointer	:
 
 // TODO: init at value ID = 3, ID2 = 7...
 enumeration	:
-	'enum' '.' ID '=' '{' ID (',' ID)* '}'
+	'enum' '.' ID '=' LCURLY ID (',' ID)* RCURLY
 	;
 	
 subrange:
@@ -125,12 +125,46 @@ structure
 
 // TODO within : arrays, structures, strings (and respective initializations)
 definition :
-  (( 'in' | 'out' | 'inout' ) '.' )? (( 'persistent' | 'retain' | 'constant') '.')? SDT ID (',' ID)*
+  (( 'in' | 'out' | 'inout' ) '.' )? (( 'persistent' | 'retain' | 'constant') '.')? (SDT | ID) varList
   ;
 
 globaldefinition 
 	:
-	(( 'config' | 'global' ) '.' )? (( 'persistent' | 'retain' | 'constant') '.')? SDT ID (',' ID)*
+	(( 'config' | 'global' ) '.' )? (( 'persistent' | 'retain' | 'constant') '.')? (SDT | ID) varList
+	;
+
+varList :
+	ID (arrayModifier)? ('=' (arrayConstantExpression | atom))? (',' ID (arrayModifier)? ('=' (arrayConstantExpression | atom))? )*
+	;
+
+arrayModifier
+	: ( LBRACK arrayRange RBRACK )
+	| ( LBRACK arrayRange RBRACK ) ( LBRACK arrayRange RBRACK )
+	| ( LBRACK arrayRange RBRACK ) ( LBRACK arrayRange RBRACK ) ( LBRACK arrayRange RBRACK )
+	;
+
+arrayRange
+	: DECIMALL ':' DECIMALL
+	;
+
+// === Array Constant Expression ===
+/* EXAMPLE
+{1,2,3,4,5}
+{1,2}{3,4}{5,6}
+*/
+arrayConstantExpression
+	: ( LCURLY literalsList RCURLY )
+	| ( LCURLY literalsList RCURLY ) ( LCURLY literalsList RCURLY )
+	| ( LCURLY literalsList RCURLY ) ( LCURLY literalsList RCURLY ) ( LCURLY literalsList RCURLY )
+	;
+
+// === Literals List ===
+/* EXAMPLE
+o!66
+h!AF,h!1024,b!0001010
+*/	
+literalsList
+	: atom ( ',' atom )*
 	;
 
 // "root" of TwinCAT grammar
@@ -227,7 +261,7 @@ caseElementsStm
   ;
 
 forStm
-  : 'for' ID 'in' '{' test ':' test ':' test '}' COLON codeBlock
+  : 'for' ID 'in' LCURLY test ':' test ':' test RCURLY COLON codeBlock
   ;
   
 whileStm
@@ -310,14 +344,7 @@ power
 	: atom trailer* ('**' factor)?
 	;
 atom
-	: ID
-/*	| FLOATINGPOINTL
-	| DECIMALL
-	| HEXL
-	| BINARYL
-	|  
-	| stringL+
-*/
+	: ID trailer?
 	| literal
 	;
 	
