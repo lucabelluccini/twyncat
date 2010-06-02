@@ -9,6 +9,7 @@ tokens {
 import java.util.LinkedList;
 }
 
+
 @lexer::members {
 int nSpaces = 0;
 int implicitLineJoiningLevel = 0;
@@ -16,19 +17,51 @@ Stack<Integer> indentations = new Stack<Integer>();
 LinkedList<Token> tokens = new LinkedList<Token>();
 
 public void emit(Token token) {
+  // Check if new token starts from 0
+  if (token.getCharPositionInLine() == 0) {
+  	// Check if token starting from 0 is not one of the allowed ones
+  	if ((token.getType() != LEADINGWS)&&(token.getType() != INDENT)&&(token.getType() != DEDENT)/*&&(token.getType() != COMMENT)*/) {
+  		// Pop all DEDENTS in the indentations stack before the matched token  		
+  		while( indentations.empty() == false) {
+  			indentations.pop();
+			Token t = new ClassicToken(DEDENT, new String("")); t.setLine(token.getLine());
+			emit(t);
+			System.out.println(token.getType() + " DED at line " + token.getLine());
+		}
+		
+  	}
+  }
   state.token = token;
   tokens.add(token);
 }
+
 public Token nextToken() {
   super.nextToken();
+  // Check if it's EOF's time
   if ( tokens.size() == 0 ) {
+    // Check if indentations stack is empty
     if ( !indentations.empty() ) {
+      // Return DEDENT tokens until stack is empty
       indentations.pop(); return new ClassicToken(DEDENT);
     }
     return Token.EOF_TOKEN;
   }
   return (Token)tokens.remove();
 }
+
+protected void mismatch(IntStream input, int ttype, BitSet follow)
+  throws RecognitionException
+{
+  throw new MismatchedTokenException(ttype, input);
+}
+
+}
+// Alter code generation so catch-clauses get replace with
+// this action.
+@rulecatch {
+	catch (RecognitionException e) {
+		throw e;
+	}
 }
 
 // === Boolean Literal ===
@@ -61,25 +94,69 @@ SDT :
 program	:
   'prog' ID ':' codeBlock
   ;
- 
+  
+function:	
+	'func' ID ':' codeBlock
+	;
+  
+// TODO: check if exprStm is the right rule to match
+alias	:
+	'alias' ID '=' exprStm	
+	;
+
+pointer	:
+	'pointer' '.' (SDT | ID)  ID (',' ID)*
+	;
+
+// TODO: init at value ID = 3, ID2 = 7...
+enum	:
+	'enum' '.' ID '=' '{' ID (',' ID)* '}'
+	;
+	
+subrange:
+	'subrange' '.' ( 'int' | 'sint' | 'usint') ID '='
+	;
+
+structure
+	: 'structure' ID COLON NEWLINE INDENT definition+ DEDENT	
+	;
+
 // TODO within : arrays, structures, strings (and respective initializations)
 definition :
   (( 'in' | 'out' | 'inout' ) '.' )? (( 'persistent' | 'retain' | 'constant') '.')? SDT ID (',' ID)*
   ;
 
+globaldefinition 
+	:
+	(( 'config' | 'global' ) '.' )? (( 'persistent' | 'retain' | 'constant') '.')? SDT ID (',' ID)*
+	;
+
 // "root" of TwinCAT grammar
 // TODO: functions, imports, ...
-file :
-  program EOF ;
+file
+	: globalStm* function* program EOF
+	;
 
 statement
-  : simpleStm
-  | compoundStm
-  ;
+	: simpleStm
+	| compoundStm
+	;
+
+globalStm
+	: smallGlobalStm (SEMI)? NEWLINE
+	;
+
+smallGlobalStm
+	: alias
+	| pointer
+	| enum
+	| globaldefinition
+	| structure
+	;
 
 // TODO: choose if we let more small statements per line
 simpleStm
-  : smallStm (SEMI smallStm)* (SEMI)? NEWLINE
+  : smallStm (SEMI)? NEWLINE
   ;
 
 // TODO: function calls
@@ -343,7 +420,7 @@ OctalEscape
   ;
 
 FF    : '\u000C';
-HASH    : '#';
+//HASH    : '#';
 TAB   : '\t';
 CR    : '\r';
 LPAREN    : '(' {implicitLineJoiningLevel++;} ;
@@ -392,6 +469,16 @@ DOT   : '.' ;
 COMMA   : ',';
 AT    : '@' ;
 
+/*
+COMMENT
+@init {
+	$channel = HIDDEN;
+}
+	: { getCharPositionInLine() == 0 }?=>	'#' ~('\n')+ NEWLINE
+	| { getCharPositionInLine() > 0 }?=>'#' ~('\n')+ 
+;
+*/
+
 NEWLINE :
     (( FF )?( CR )? '\n' )+
     { if ( $start == 0 || implicitLineJoiningLevel > 0 )
@@ -399,10 +486,14 @@ NEWLINE :
     }
     ;
 
+
+
 WS  :    
     { getCharPositionInLine() > 0 }?=>
     (' '| TAB | FF )+ { $channel = HIDDEN; }
     ;
+    
+
 
 // TODO: ignore this rule using a flag when implicitjoiningline > 0
 LEADINGWS	
