@@ -1,0 +1,25 @@
+func myfunct:
+	in.bool par1, par2, par3
+	out.bool result
+	result = (par1+par2+par3*4-10)/(par1+par2+par3*4+10)
+	result = (par1+par2+par3*4-10)/10
+	result = (par1+par2+par3*4-10)/var2
+	result = vaer/(par1+par2+par3*4+10)
+	result = 100+(par1+par2+par3*4-10)/(par1+par2+par3*4+10)
+
+prog test:
+	out.myType myVar = '3', myVar2 = 3, myVar3[1:10] = {1,2,3,4,5,6,7,8,9,10}
+	pippo = 3
+	pluto = "Stringa"
+	myfunct(1,2,3)
+	paperino = 'c'
+	in.bool flag
+	if test:
+		myVar = True
+	else:
+		myVar = False
+	minni = 8
+	while test2:
+		instruction = 100
+		instruction2 = b!00010010
+		instruction3 = h!00FFAA12
