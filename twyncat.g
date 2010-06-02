@@ -100,6 +100,10 @@ program	:
 function:	
 	'func' ID ':' codeBlock
 	;
+
+callFunc
+	: ID trailer? '(' ( atom ( ',' atom)*)? ')'
+	;
   
 // TODO: check if exprStm is the right rule to match
 alias	:
@@ -115,9 +119,12 @@ enumeration	:
 	'enum' '.' ID '=' LCURLY ID (',' ID)* RCURLY
 	;
 	
+// TODO: not completed
+/*
 subrange:
 	'subrange' '.' ( 'int' | 'sint' | 'usint') ID '='
 	;
+*/
 
 structure
 	: 'structure' ID COLON NEWLINE INDENT definition+ DEDENT	
@@ -125,16 +132,16 @@ structure
 
 // TODO within : arrays, structures, strings (and respective initializations)
 definition :
-  (( 'in' | 'out' | 'inout' ) '.' )? (( 'persistent' | 'retain' | 'constant') '.')? (SDT | ID) varList
-  ;
+	(( 'in' | 'out' | 'inout' ) DOT )? (( 'persistent' | 'retain' | 'constant') DOT )? (SDT | ID) varList
+	;
 
 globaldefinition 
 	:
-	(( 'config' | 'global' ) '.' )? (( 'persistent' | 'retain' | 'constant') '.')? (SDT | ID) varList
+	(( 'config' | 'global' ) DOT )? (( 'persistent' | 'retain' | 'constant') DOT )? (SDT | ID) varList
 	;
 
 varList :
-	ID (arrayModifier)? ('=' (arrayConstantExpression | atom))? (',' ID (arrayModifier)? ('=' (arrayConstantExpression | atom))? )*
+	ID (arrayModifier)? ('=' (arrayConstantExpression | atom))? (',' ID trailer? (arrayModifier)? ('=' (arrayConstantExpression | atom))? )*
 	;
 
 arrayModifier
@@ -226,6 +233,7 @@ augAssign
 flowStm
   : returnStm
   | exitStm
+  | callFunc
   ;
 
 exitStm
@@ -241,7 +249,6 @@ compoundStm
   | caseStm
   | forStm
   | whileStm
-  //| repeatUntilStm
   ;
 
 ifStm
@@ -332,20 +339,21 @@ arithExpr:
 	term (('+'|'-') term)*
 	;
 	
-term:
-	factor (('*'|'/'|'%'|'//') factor)*
+term
+	: factor (('*'|'/'|'%'|'//') factor)*
 	;
 	
-factor: 
-	('+'|'-'|'~') factor | power
+factor
+	:  '(' expr ')' 
+	| ('+'|'-'|'~') factor | power
 	;
 	
 power
 	: atom trailer* ('**' factor)?
 	;
 atom
-	: ID trailer?
-	| literal
+	: literal
+	| ID trailer?
 	;
 	
 trailer
