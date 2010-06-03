@@ -1,5 +1,9 @@
 grammar twyncat;
 
+options {
+	output = AST;
+}
+
 tokens {
 	INDENT;
 	DEDENT;
