@@ -1,4 +1,10 @@
+pointer.int myPointer
+alias MYSHORTCUT = 100-(10+VAR3)
+enum.myEnum = {mon = 1,tue,wed,thu,fri,sat,sun}
+
 func myfunct:
+	in.int par6, par7 = 11, par9 = 'c', stringa = " SAdsadas"
+	out.int array[1:10]= [1,2,3,4,5,6,7,8,9,10], array2[1:4] = [1,2,3,4]
 	in.bool par1, par2, par3
 	out.bool result
 	result = (par1+par2+par3*4-10)/(par1+par2+par3*4+10)
@@ -6,10 +12,12 @@ func myfunct:
 	result = (par1+par2+par3*4-10)/var2
 	result = vaer/(par1+par2+par3*4+10)
 	result = 100+(par1+par2+par3*4-10)/(par1+par2+par3*4+10)
+	result = 10+(100-par1)*10+par2/4+(100+((par3-10)/4)-20)
+	in.int par4, par5
 
 prog test:
-	out.myType myVar = '3', myVar2 = 3, myVar3[1:10] = {1,2,3,4,5,6,7,8,9,10}
-	pippo = 3
+	out.myType myVar = '3', myVar2 = 3, myVar3[1:10] = [1,2,3,4,5,6,7,8,9,10]
+	pippo = 99
 	pluto = "Stringa"
 	myfunct(1,2,3)
 	paperino = 'c'
@@ -23,3 +31,9 @@ prog test:
 		instruction = 100
 		instruction2 = b!00010010
 		instruction3 = h!00FFAA12
+		repeat:
+			instr(a)
+			instrb(a+b,c)
+			instrc(10,99)
+		until condition == True
+		instruction3 = 7

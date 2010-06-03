@@ -76,8 +76,8 @@ BOOLEANL
   ;
 
 // === Standard Data Type ===
-SDT :
-  'bool'    // {True, False}
+SDT options{ k = 4; }
+  : 'bool'    // {True, False}
   | 'byte'  // {0 to 255}
   | 'word'  // {0 to 65535}
   | 'dword' // {0 to 4294967295}
@@ -106,7 +106,7 @@ function:
 	;
 
 callFunc
-	: ID trailer? '(' ( atom ( ',' atom)*)? ')'
+	: ID trailer? '(' ( test ( ',' test)*)? ')'
 	;
   
 // TODO: check if exprStm is the right rule to match
@@ -120,7 +120,7 @@ pointer	:
 
 // TODO: init at value ID = 3, ID2 = 7...
 enumeration	:
-	'enum' '.' ID '=' LCURLY ID (',' ID)* RCURLY
+	'enum' '.' ID '=' LCURLY ID ('=' DECIMALL)? (',' ID ('=' DECIMALL)?)* RCURLY
 	;
 	
 // TODO: not completed
@@ -131,7 +131,7 @@ subrange:
 */
 
 structure
-	: 'structure' ID COLON NEWLINE INDENT definition+ DEDENT	
+	: 'structure' ID COLON NEWLINE INDENT ((SDT | ID) varList NEWLINE)+ DEDENT	
 	;
 
 // TODO within : arrays, structures, strings (and respective initializations)
@@ -160,13 +160,13 @@ arrayRange
 
 // === Array Constant Expression ===
 /* EXAMPLE
-{1,2,3,4,5}
-{1,2}{3,4}{5,6}
+[1,2,3,4,5]
+[1,2][3,4][5,6]
 */
 arrayConstantExpression
-	: ( LCURLY literalsList RCURLY )
-	| ( LCURLY literalsList RCURLY ) ( LCURLY literalsList RCURLY )
-	| ( LCURLY literalsList RCURLY ) ( LCURLY literalsList RCURLY ) ( LCURLY literalsList RCURLY )
+	: ( LBRACK literalsList RBRACK )
+	| ( LBRACK literalsList RBRACK ) ( LBRACK literalsList RBRACK )
+	| ( LBRACK literalsList RBRACK ) ( LBRACK literalsList RBRACK ) ( LBRACK literalsList RBRACK )
 	;
 
 // === Literals List ===
@@ -353,7 +353,7 @@ factor
 	;
 	
 power
-	: atom trailer* ('**' factor)?
+	: atom ('**' factor)?
 	;
 atom
 	: literal
@@ -379,13 +379,13 @@ literal
   //stringL |
   BINARYL
   | HEXL
+  | FLOATINGPOINTL
   | DECIMALL
   | OCTALL
   | timeL
   | todL
   | dateL
   | datetimeL
-  | FLOATINGPOINTL
   | BOOLEANL
   | CHARACTERL
   | stringL
