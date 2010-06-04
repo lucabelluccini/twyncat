@@ -2,6 +2,7 @@ grammar twyncat;
 
 options {
 	output = AST;
+	backtrack = true;
 }
 
 tokens {
@@ -375,9 +376,7 @@ singleFileInput
 // === Literals ===
 // TODO: String initialization
 literal
-  : 
-  //stringL |
-  BINARYL
+  : BINARYL
   | HEXL
   | FLOATINGPOINTL
   | DECIMALL
@@ -391,15 +390,6 @@ literal
   | stringL
   ;
 
-fragment
-FLOATINGPOINTL
-  :   ('0'..'9')* '.' ('0'..'9')+ Exponent?
-  |   ('0'..'9')+ Exponent?
-  ;
-
-fragment
-Exponent : ('e'|'E') ('+'|'-')? ('0'..'9')+ ; 
-
 BINARYL
   : 'b!' ('0'..'1')+
   ;
@@ -408,17 +398,31 @@ HEXL
   : 'h!' HEXDIGIT+
   ;
 
+FLOATINGPOINTL
+  :    ('0'..'9')* '.' ('0'..'9')+ Exponent?
+  |    ('0'..'9')+ Exponent
+  ;
+
+fragment
+Exponent : ('e'|'E') ('+'|'-')? ('0'..'9')+ ; 
+
 fragment
 HEXDIGIT
   : ('0'..'9'|'a'..'f'|'A'..'F')
   ;
-  
+
 DECIMALL
   : ('0' | '1'..'9' '0'..'9'*)
   ;
 
 OCTALL
   : 'o!' ('0'..'7')+
+  ;
+
+fragment
+EscapeSequence
+  :   '\\' ('b'|'t'|'n'|'f'|'r'|'\"'|'\''|'\\')
+  |   OctalEscape
   ;
 
 timeL
@@ -447,12 +451,6 @@ CHARACTERL
 
 stringL
   :  '"' ( EscapeSequence | ~('\\'|'"') )* '"'
-  ;
-
-fragment
-EscapeSequence
-  :   '\\' ('b'|'t'|'n'|'f'|'r'|'\"'|'\''|'\\')
-  |   OctalEscape
   ;
   
 fragment
