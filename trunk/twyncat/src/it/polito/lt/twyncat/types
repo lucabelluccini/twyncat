@@ -1,0 +1,17 @@
+bool
+byte
+word
+dword
+sint
+usint
+int
+uint
+dint
+udint
+real
+lreal
+string
+time
+tod
+date
+dt
