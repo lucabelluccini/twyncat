@@ -10,6 +10,10 @@ tokens {
 	DEDENT;
 }
 
+@parser::header {
+
+}
+
 @lexer::header {
 import java.util.LinkedList;
 }
