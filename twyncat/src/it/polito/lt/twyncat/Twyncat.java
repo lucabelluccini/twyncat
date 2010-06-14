@@ -5,6 +5,7 @@ import it.polito.lt.twyncat.exceptions.StructureExistsException;
 import it.polito.lt.twyncat.exceptions.SymbolExistsException;
 import it.polito.lt.twyncat.exceptions.TypeUnknownException;
 import it.polito.lt.twyncat.exceptions.UnknownTypeException;
+import it.polito.lt.twyncat.exceptions.VariableNotDeclaredException;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -133,8 +134,8 @@ public class Twyncat {
 			if(structures.containsKey(type)) {
 				Structure s = structures.get(type);
 				Symbol sym = new Symbol(n, s.getType());
-				symbols.put(sym.getName(), sym);						// Adds root symbol		
-				HashMap<String,Field> fields = s.getFields();			// Obtains all fields of structure
+				symbols.put(sym.getName(), sym);
+				HashMap<String,Field> fields = s.getFields();
 				for(String fs : fields.keySet()) {
 					Field sf = fields.get(fs);
 					sym = new Symbol(n + "." + fs, sf.getType());
@@ -146,9 +147,17 @@ public class Twyncat {
 		}
 	}
 	
-	Boolean checkVariable(String name) {
-		
-		return true;
+	void checkVariable(String name) throws VariableNotDeclaredException {
+		if(symbols.containsKey(name)) {
+			return;
+		} else {
+			String unscopedName = name.substring(name.indexOf("."));
+			if(symbols.containsKey(unscopedName)){
+				return;
+			} else {
+				throw new VariableNotDeclaredException(name);
+			}
+		}
 	}
 }
  
