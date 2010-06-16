@@ -10,7 +10,6 @@ import it.polito.lt.twyncat.exceptions.VariableNotDeclaredException;
 public class TwyncatManager {
 
 	
-	
 	public static void main(String[] args) throws SymbolExistsException, TypeUnknownException {
 		Twyncat twy = Twyncat.getInstance();
 		

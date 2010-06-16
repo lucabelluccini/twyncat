@@ -5,6 +5,7 @@ enum.myEnum = {mon = 1,tue,wed,thu,fri,sat,sun}
 func myfunct:
 	in.int par6, par7 = 11, par9 = 'c', stringa = " SAdsadas"
 	out.int array[1:10]= [1,2,3,4,5,6,7,8,9,10], array2[1:4] = [1,2,3,4]
+	in.int arrayZ[1:10][2:30][3:20]
 	in.bool par1, par2, par3
 	out.bool result
 	result = (par1+par2+par3*4-10)/(par1+par2+par3*4+10)
@@ -37,5 +38,5 @@ prog test:
 			instr(a)
 			instrb(a+b,c)
 			instrc(10,99)
-		until condition == True
+		until x == True
 		instruction3 = 7
