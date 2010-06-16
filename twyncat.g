@@ -1,7 +1,9 @@
 grammar twyncat;
 
 options {
-	output = AST;
+	//output = template;
+	//rewrite = true;
+	//output = AST;
 	backtrack = true;
 }
 
@@ -11,7 +13,6 @@ tokens {
 }
 
 @parser::header {
-
 }
 
 @lexer::header {
@@ -35,7 +36,7 @@ public void emit(Token token) {
   			indentations.pop();
 			Token t = new ClassicToken(DEDENT, new String("")); t.setLine(token.getLine());
 			emit(t);
-			System.out.println(token.getType() + " DED at line " + token.getLine());
+			System.out.println("DED at line " + token.getLine());
 		}
 		
   	}
@@ -141,7 +142,7 @@ structure
 
 // TODO within : arrays, structures, strings (and respective initializations)
 definition :
-	(( 'in' | 'out' | 'inout' ) DOT )? (( 'persistent' | 'retain' | 'constant') DOT )? (SDT | ID) varList
+	(( 'in' | 'out' | 'inout' ) DOT )? (( 'persistent' | 'retain' | 'constant') DOT )? (SDT | ID) varList  { System.out.println("ASD " + $start); }
 	;
 
 globaldefinition 
@@ -150,18 +151,23 @@ globaldefinition
 	;
 
 varList :
-	ID (arrayModifier)? ('=' (arrayConstantExpression | atom))? (',' ID trailer? (arrayModifier)? ('=' (arrayConstantExpression | atom))? )*
+	varListElem (',' varListElem )*
+	;
+	
+fragment
+varListElem 
+	: ID trailer? (arrayModifier)? ('=' (arrayConstantExpression | atom))?
 	;
 
 arrayModifier
 	: ( LBRACK arrayRange RBRACK )
-	| ( LBRACK arrayRange RBRACK ) ( LBRACK arrayRange RBRACK )
-	| ( LBRACK arrayRange RBRACK ) ( LBRACK arrayRange RBRACK ) ( LBRACK arrayRange RBRACK )
+	| ( LBRACK first=arrayRange RBRACK ) ( LBRACK second=arrayRange RBRACK ) 
+	| ( LBRACK first=arrayRange RBRACK ) ( LBRACK second=arrayRange RBRACK ) ( LBRACK third=arrayRange RBRACK )
 	;
 
 arrayRange
-	: DECIMALL ':' DECIMALL
-	;
+	: l=DECIMALL ':' h=DECIMALL // -> arrayRange(low={$l.text},high={$h.text}) // When more TOKENS appear in a Parser Rule, it is necessary to label them, removing ambiguities
+	; 
 
 // === Array Constant Expression ===
 /* EXAMPLE
