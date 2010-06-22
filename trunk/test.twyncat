@@ -1,4 +1,5 @@
-pointer.int myPointer
+pointer.int x
+pointer.int myPointer, mySecondPointer, myThirdPointer
 alias MYSHORTCUT = 100-(10+VAR3)
 enum.myEnum = {mon = 1,tue,wed,thu,fri,sat,sun}
 
@@ -22,7 +23,7 @@ prog test:
 	out.myType myVar = '3', myVar2 = 3, myVar3[1:10] = [1,2,3,4,5,6,7,8,9,10]
 	pippo = 99
 	pluto = "Stringa"
-	myfunct(1,2,3)
+	myfunct(a=1,b=2,c=3)
 	paperino = 'c'
 	in.bool flag
 	if test:
@@ -30,13 +31,13 @@ prog test:
 	else:
 		myVar = False
 	minni = 8
-	while test2:
-		instruction = 100
+	while True :
+		instruction = 100 a b c
 		instruction2 = b!00010010
 		instruction3 = h!00FFAA12
 		repeat:
-			instr(a)
-			instrb(a+b,c)
-			instrc(10,99)
+			instr(a=5)
+			instrb(x=a+b,z=c)
+			instrc(test=10,var=9)
 		until x == True
 		instruction3 = 7

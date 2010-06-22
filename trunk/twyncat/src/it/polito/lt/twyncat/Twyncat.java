@@ -6,6 +6,7 @@ import it.polito.lt.twyncat.exceptions.SymbolExistsException;
 import it.polito.lt.twyncat.exceptions.TypeUnknownException;
 import it.polito.lt.twyncat.exceptions.UnknownTypeException;
 import it.polito.lt.twyncat.exceptions.VariableNotDeclaredException;
+import it.polito.lt.twyncat.rules.Function;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -21,6 +22,7 @@ public class Twyncat {
 	static HashMap<String,Structure> structures;
 	static HashMap<String,Type> types;
 	static HashMap<String,Symbol> symbols;
+	static HashMap<String,Function> functions;
 	
 	private Twyncat(){
 		structures = new HashMap<String, Structure>();
@@ -126,7 +128,7 @@ public class Twyncat {
 		} else {
 			// Check if Type exists in base types
 			if(types.containsKey(type)) {
-				Symbol s = new Symbol(n, types.get(type));
+				Symbol s = new Symbol(n, false, types.get(type));
 				symbols.put(s.getName(), s);
 				return;
 			}
