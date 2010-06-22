@@ -21,9 +21,11 @@ public class Main {
         twyncatLexer lex = new twyncatLexer(new ANTLRFileStream("Z:/Documenti/Appunti e Dispense/Corsi Politecnico To DO/Linguaggi e Traduttori/Tesina/TwynCAT/test.twyncat"));
         //CommonTokenStream tokens = new CommonTokenStream(lex);
         CommonTokenStream tokens = new TokenRewriteStream(lex);
-        twyncatParser g = new twyncatParser(tokens);
+        twyncatParser g = new twyncatParser(tokens, 49100, null);
         g.setTemplateLib(templates);
-        RuleReturnScope r = g.file();
-        System.out.println(r.getTemplate().toString());
+        twyncatParser.file_return fr;
+		fr = g.file();
+		StringTemplate outputST = (StringTemplate) fr.getTemplate();
+        System.out.println(outputST.toString());
     }
 }

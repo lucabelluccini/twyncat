@@ -1,3 +1,24 @@
 group twincatST;
 
+file(globalStm,function,program) ::= <<
+(* Generated from Twyncat Language *)
+<globalStm; separator="\n">
+<function; separator="\n">
+<program>
+>>
+
+function() ::= <<
+FUNCTION
+>>
+
+program(name) ::= <<
+PROGRAM <name>
+>>
+
+pointer(type,name) ::= <<
+<name>: POINTER TO <type>; 
+>>
+
 arrayRange(low,high) ::= "<low>..<high>"
+
+sdt_int() ::= "int"

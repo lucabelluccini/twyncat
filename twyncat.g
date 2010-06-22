@@ -3,7 +3,7 @@ grammar twyncat;
 options {
 	//output = template;
 	//rewrite = true;
-	//output = AST;
+	output = AST;
 	backtrack = true;
 }
 
@@ -68,6 +68,12 @@ protected void mismatch(IntStream input, int ttype, BitSet follow)
 }
 
 }
+
+@parser:members{
+File f;
+Block currentBlock = null;
+}
+
 // Alter code generation so catch-clauses get replace with
 // this action.
 @rulecatch {
@@ -78,18 +84,21 @@ protected void mismatch(IntStream input, int ttype, BitSet follow)
 
 // === Boolean Literal ===
 BOOLEANL
-  : 'True' | 'False'
-  ;
+	: 'True' | 'False'
+	;
+// return bool
+// print out
 
 // === Standard Data Type ===
-SDT options{ k = 4; }
-  : 'bool'    // {True, False}
+SDT
+options{ k = 4; }
+  : 'bool'
   | 'byte'  // {0 to 255}
   | 'word'  // {0 to 65535}
   | 'dword' // {0 to 4294967295}
   | 'sint'  // {-128 to 127}
   | 'usint' // {0 to 255}
-  | 'int'   // {-32768 to 32767}
+  | 'int'	
   | 'uint'  // {0 to 65535}
   | 'dint'  // {-2147483648 to 2147483647}
   | 'udint' // {0 to 4294967295}
@@ -101,34 +110,81 @@ SDT options{ k = 4; }
   | 'date'  // {D#1970-01-01 to D#2106-02-06} - D#1972-03-29
   | 'dt'    // {DT#1970-01-01-00:00 to DT#2106-02-06-06:28:15}
   ;
+// return type for each one
 
-// Only one per file
-program	:
-  'prog' ID ':' codeBlock
-  ;
-  
-function:	
-	'func' ID ':' codeBlock
+program returns [Program p]
+	: 'prog' ID ':' codeBlock
+	{
+		p = new Program($ID.text);		// creates a Program Model
+		for(Statement s : $codeBlock){		// for each Statement Model in codeBlock (cB returns a Statement list)
+			p.add(s);			// adds each Statement Model to Program Model
+		}
+	}
 	;
 
-callFunc
-	: ID trailer? '(' ( test ( ',' test)*)? ')'
-	;
-  
-// TODO: check if exprStm is the right rule to match
-alias	:
-	'alias' ID '=' exprStm	
-	;
-
-pointer	:
-	'pointer' '.' (SDT | ID)  ID (',' ID)*
+function returns [Function f]
+	: 'func' ID ':' codeBlock
+	{
+		f = new Function($ID.text);		// creates a Function Model
+		for(Statement s : $codeBlock){		// for each Statement Model in codeBlock (returns a Statement list)
+			f.add(s);			// adds each Statement Model to Function Model
+		}
+	}
 	;
 
-// TODO: init at value ID = 3, ID2 = 7...
-enumeration	:
-	'enum' '.' ID '=' LCURLY ID ('=' DECIMALL)? (',' ID ('=' DECIMALL)?)* RCURLY
+callFunc returns [FunctionCall fc]
+	: ID trailer? '(' callFuncArgs ')'
+	{
+		fc = new FunctionCall($ID.text);	// creates a Function Call Model
+		for(String fcaK : $callFuncArgs.args.keys()){	// for each argument in callFuncArgs (returns a Map<String,FunctionCallArg>)
+			FunctionCallArg fca = $callFuncArgs.args.get(fcaK);
+			// performs the check each argument is the same type of the value passed
+			// if symbols.get($ID.text + $trailer.text + "." + fcaK).getType() == fca.getType()
+			fc.add(fca);	
+		}
+	}
 	;
 	
+callFuncArgs returns [Map<String,FunctionCallArg> args]
+	:  ( argsN+=ID '=' argsV+=test ( ',' argsN+=ID '=' argsV+=test)*)? 
+	{
+		args = new HashMap<String,FunctionCallArg>();
+		for(Token t : $argsN){
+			FunctionCallArg fca = new FunctionCallArg(t.getText(),
+		}
+	}
+	;
+	
+
+// check if ID trailer? exists as function name
+// check if IDs are declared as ID trailer? ID
+// turn '=' in ':=' and printout
+  
+alias	
+	: 'alias' ID '=' exprStm	
+	;
+// check if alias exists
+// print out
+
+pointer	
+	: 'pointer' '.' (t=SDT | t=ID) n+=ID (',' n+=ID)* //-> template(type={$t.text},names={$n}) "<names>:POINTER TO <type>"
+	;
+// for each ID, declare a variable named scope.ID giving type pointer to t
+// for each ID, print out twincat syntax for pointer
+
+enumeration	:
+	'enum' '.' en=ID '=' LCURLY enumerationElementList RCURLY //-> enum(name={$en},elementList={$enumerationElementList.st})
+	;
+
+enumerationElementList 
+	:  enumerationElement? (',' enumerationElement)* 
+	;
+
+fragment	
+enumerationElement :
+	ID ('=' DECIMALL)?
+	;
+
 // TODO: not completed
 /*
 subrange:
@@ -137,12 +193,16 @@ subrange:
 */
 
 structure
-	: 'structure' ID COLON NEWLINE INDENT ((SDT | ID) varList NEWLINE)+ DEDENT	
+	: 'structure' ID COLON NEWLINE INDENT structureElement+ DEDENT
+	;
+	
+structureElement
+	: ((SDT | ID) varList NEWLINE)+
 	;
 
 // TODO within : arrays, structures, strings (and respective initializations)
 definition :
-	(( 'in' | 'out' | 'inout' ) DOT )? (( 'persistent' | 'retain' | 'constant') DOT )? (SDT | ID) varList  { System.out.println("ASD " + $start); }
+	(( 'in' | 'out' | 'inout' ) DOT )? (( 'persistent' | 'retain' | 'constant') DOT )? (SDT | ID) varList
 	;
 
 globaldefinition 
@@ -166,7 +226,7 @@ arrayModifier
 	;
 
 arrayRange
-	: l=DECIMALL ':' h=DECIMALL // -> arrayRange(low={$l.text},high={$h.text}) // When more TOKENS appear in a Parser Rule, it is necessary to label them, removing ambiguities
+	: l=DECIMALL ':' h=DECIMALL //-> arrayRange(low={$l.text},high={$h.text}) // When more TOKENS appear in a Parser Rule, it is necessary to label them, removing ambiguities
 	; 
 
 // === Array Constant Expression ===
@@ -192,7 +252,16 @@ literalsList
 // "root" of TwinCAT grammar
 // TODO: functions, imports, ...
 file
-	: globalStm* function* program EOF
+	@init {
+		f = new File();				// creates a File Model
+		currentBlock = f;			// sets currentBlock to File Model
+	}
+	: gs+=globalStm* fs+=function* program EOF //-> file(globalStm = {$gs}, function = {$fs}, program = {$program.st})
+	{
+		for(Statement gStm : $gs){
+			currentBlock.add(gStm);
+		}
+	}
 	;
 
 statement
@@ -201,15 +270,15 @@ statement
 	;
 
 globalStm
-	: smallGlobalStm (SEMI)? NEWLINE
+	: smallGlobalStm (SEMI)? NEWLINE //-> {$smallGlobalStm.st}
 	;
 
 smallGlobalStm
-	: alias
-	| pointer
-	| enumeration
-	| globaldefinition
-	| structure
+	: alias //-> {$alias.st}
+	| pointer //-> {$pointer.st}
+	| enumeration //-> {$enumeration.st}
+	| globaldefinition //-> {$globaldefinition.st}
+	| structure //-> {$structure.st}
 	;
 
 // TODO: choose if we let more small statements per line
@@ -328,10 +397,6 @@ compOperator
 	| '<='
 	| '<>'
 	| '!='
-	//| 'in'
-	//| 'not' 'in'
-	//| 'is'
-	//| 'is' 'not'
 	;
 	
 expr:
