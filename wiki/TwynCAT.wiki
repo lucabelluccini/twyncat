@@ -52,44 +52,31 @@ prog get1channelFast:
                      BufferLatchPosEL1252ACh1 = LatchPosEL1252ACh1
 }}}
 
-== Data declarations ==
+== Data definitions ==
 
-Can be declared within instructions.
+Can be declared within statements.
 Variables must be already declared or just declared at first usage.
+They'll be in the scope of the current functional block (program or function).
+More than 1 variables of the same type will be accepted in a single line.
 
-=== Declaration and arrays ===
 {{{
 {in | out | inout}?.{<sdt> | <udt> } <variable name> # variable
 {in | out | inout}?.<sdt> <variable name>[<lower limit>:<up limit>] # 1-dim array
 {in | out | inout}?.{retain | persistent | constant}.<sdt> <variable name>
 }}}
 
-=== Enumerations ===
 {{{
 enum <enumeration name> : {enum { = <initialization> }? }+
 }}}
 
-=== Pointers ===
 {{{
 pointer {<data type> | <function block name>} <pointer name>
 }}}
 
-=== Aliases ===
-{{{
-alias <alias> <assignment term>
-}}}
-
-=== Subranges ===
 {{{
 subrange <sdt> <subrange name> <lower limit>:<up limit>
 }}}
 
-=== Range (arrays) ===
-{{{
-[<lower limit>:<up limit>]
-}}}
-
-=== User Data Types ===
 {{{
 structure <structure name>:
     <Declaration of Variable 1> 
@@ -97,6 +84,34 @@ structure <structure name>:
     . 
     <Declaration of Variable n>
 }}}
+
+{{{
+{in | out | mem}.location <memory location alias> @ <location> {bit | byte | word | dword | config} 
+}}}
+
+=== Error checking ===
+
+Will be checked:
+  * Indent / Dedent structure
+  * Syntax errors
+  * Type checking (strong typed on the left side of the assignment)
+
+=== Functional blocks ===
+
+For each Twyncat file, will be allowed:
+  * Global variables
+  * 0 or more Function Blocks
+  * No procedures
+  * A program Blocks
+
+=== Statements ===
+
+All the statements of Twincat are supported also in Twyncat, but with a slightly different syntax.
+Function calls will check for correct arguments, correct number of arguments and type.
+
+=== Standard Library ===
+Types, variables, constants defined in Std Lib will be added using external text files.
+The user will be warned of not declared stuff during translation.
 
 === Constants ===
 {{{
@@ -119,9 +134,4 @@ t!1d23h59m59s999ms      # Time
 tod!99:98:97.654        # Time of Day
 d!2012-02-06            # Date
 dt!1986-08-05-10:30     # Date and Time
-}}}
-
-=== Memory Locations ===
-{{{
-{in | out | mem}.location <memory location alias> @ <location> {bit | byte | word | dword | config} 
 }}}
