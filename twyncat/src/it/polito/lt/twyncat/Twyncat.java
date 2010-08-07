@@ -6,7 +6,6 @@ import it.polito.lt.twyncat.exceptions.SymbolExistsException;
 import it.polito.lt.twyncat.exceptions.TypeUnknownException;
 import it.polito.lt.twyncat.exceptions.UnknownTypeException;
 import it.polito.lt.twyncat.exceptions.VariableNotDeclaredException;
-import it.polito.lt.twyncat.rules.Function;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -19,23 +18,23 @@ import java.util.StringTokenizer;
 public class Twyncat {
 	
 	private static Twyncat instance = null;
-	static HashMap<String,Structure> structures;
-	static HashMap<String,Type> types;
-	static HashMap<String,Symbol> symbols;
-	static HashMap<String,Function> functions;
+	static HashMap<String,Structure> structures = null;
+	static HashMap<String,Type> types = null;
+	static HashMap<String,Symbol> symbols = null;
+
 	
 	private Twyncat(){
 		structures = new HashMap<String, Structure>();
 		types = new HashMap<String,Type>();
 		symbols = new HashMap<String,Symbol>();
-		File fT = new File("C:\\Users\\Luca\\Desktop\\types");
-		File fS = new File("C:\\Users\\Luca\\Desktop\\structures");
+		File fT = new File("H:\\types");
+		File fS = new File("H:\\structures");
 		initTypes(fT);
 		initStructures(fS);
 	}
 	
 	protected static Type getType(String name) {
-		if (instance == null)
+		if (types == null)
 			return null;
 		if (types.containsKey(name))
 			return types.get(name);
@@ -43,7 +42,7 @@ public class Twyncat {
 	}
 	
 	protected static Structure getStructure(String name) {
-		if (instance == null)
+		if (structures == null)
 			return null;
 		if (structures.containsKey(name))
 			return structures.get(name);
@@ -76,14 +75,14 @@ public class Twyncat {
 			String line = null;
 			while (( line = input.readLine()) != null) {
 				StringTokenizer st = new StringTokenizer(line, "->");
-				Structure s = new Structure(st.nextToken(" "));
+				Structure s = new Structure(st.nextToken().trim());
+				st.nextToken(" ");
 				while(st.hasMoreTokens() && (st.countTokens() >= 2)){
 					String fieldName = st.nextToken().trim();
 					String fieldType = st.nextToken().trim();
 					s.addField(fieldName, fieldType);
 				}
 				structures.put(s.getName(), s);
-				System.out.println(s.getName() + " added!");
 			}
 		} catch (FileNotFoundException e1) {
 			// TODO Auto-generated catch block
@@ -128,7 +127,7 @@ public class Twyncat {
 		} else {
 			// Check if Type exists in base types
 			if(types.containsKey(type)) {
-				Symbol s = new Symbol(n, false, types.get(type));
+				Symbol s = new Symbol(n, types.get(type));
 				symbols.put(s.getName(), s);
 				return;
 			}

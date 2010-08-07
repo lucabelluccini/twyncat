@@ -16,7 +16,7 @@ public class TwyncatManager {
 		Structure s3 = new Structure("myType3");
 		try {
 			s3.addField("a", "udint");
-			s3.addField("v", "int");
+			s3.addField("v", "myType7");
 		} catch (FieldExistsException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();

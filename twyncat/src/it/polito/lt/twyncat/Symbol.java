@@ -6,10 +6,10 @@ public class Symbol {
 	Component type;
 	Boolean isArray;
 	
-	public Symbol(String n, Boolean a, Component t) {
+	public Symbol(String n, Component t) {
 		name = n;
 		type = t;
-		isArray = a;
+		isArray = false;
 	}
 
 	public String getName() {
