@@ -76,7 +76,7 @@ protected void mismatch(IntStream input, int ttype, BitSet follow) throws Recogn
 	}
 }
 
-BOOLEANL returns [ String txt ]
+booleanL returns [ String txt ]
 	: 'True' { $txt = "TRUE"; }
 	| 'False' { $txt = "FALSE"; }
 	;
@@ -111,35 +111,26 @@ function
 	;
 
 callFunc returns [ String txt ]
-	: ID trailer? '(' callFuncArgs ')'
-	{
-		$txt = $ID.text + ($trailer.text == null?"":$trailer.text) + "(" + $callFuncArgs.txt + ")";
-		System.out.println($txt);
-	}
+	: ID trail=trailer? '(' callFuncArgs ')'
+	{ $txt = $ID.text + ($trail.txt == null?"":$trail.txt) + "(" + $callFuncArgs.txt + ")"; System.out.println($txt); }
 	;
 	
 callFuncArgs returns [String txt]
-	:  ( argsN+=ID '=' argsV+=test ( ',' argsN+=ID '=' argsV+=test)*)? 
+@init	{StringBuilder sb = new StringBuilder();}
+@after	{$txt = sb.toString();}
+	: ( argN=ID '=' argV=test 
 	{
-		StringBuilder sb = new StringBuilder();
-		ListIterator<CommonTree> vI = $argsV.listIterator();
-		ListIterator<CommonToken> nI = $argsN.listIterator();
-		while(vI.hasNext()){
-			sb.append(nI.next().getText() + " := " + vI.next().getText());
-			if(vI.hasNext()){
-				sb.append(", ");
-			}
-		}
-		$txt = sb.toString();
+	sb.append($argN.text + " := " + $argV.txt);
+	}
+	( ',' argN=ID '=' argV=test)*)? 
+	{
+	sb.append(", " + $argN.text + " := " + $argV.txt);
 	}
 	;
 	
 alias returns [ String txt ]
 	: 'alias' ID '=' exprStm
-	{
-		$txt = "TYPE " + $ID.text + ":" + $exprStm.txt + "; " + "END_TYPE";
-		System.out.println($txt);
-	}	
+	{ $txt = "TYPE " + $ID.text + ":" + $exprStm.txt + "; " + "END_TYPE"; System.out.println($txt);	}
 	;
 
 pointer	returns [ List<String> statements ]
@@ -157,34 +148,20 @@ pointer	returns [ List<String> statements ]
 // for each ID, declare a variable named scope.ID giving type pointer to t
 // for each ID, print out twincat syntax for pointer
 enumeration returns [ String txt ]
-	:	'enum' '.' en=ID '=' LCURLY enumerationElementList RCURLY
-	{
-		$txt = "TYPE " + $en.text + ":(" + $enumerationElementList.txt + "); END_TYPE";
-	}
+	: 'enum' '.' en=ID '=' LCURLY enumerationElementList RCURLY
+	{ $txt = "TYPE " + $en.text + ":(" + $enumerationElementList.txt + "); END_TYPE"; System.out.println($txt); }
 	;
 
 enumerationElementList returns [ String txt ]
-	:  eE+=enumerationElement? (',' eE+=enumerationElement)*
-	{
-		StringBuilder sb = new StringBuilder();
-		ListIterator<CommonTree> i = $eE.listIterator();
-		while(i.hasNext()) {
-			sb.append(i.next().getText()); // FIX TXT!!!!!
-			if(i.hasNext()){
-				sb.append(", ");
-			}
-		}
-		$txt = sb.toString();
-	} 
+@init	{ StringBuilder sb = new StringBuilder(); }
+@after	{ $txt = sb.toString(); }
+	:  ee1=enumerationElement { sb.append($ee1.txt); } (',' eeN=enumerationElement { sb.append(", " + $eeN.txt); } )*
 	;
 
-fragment	
-enumerationElement returns [ String txt ]
-	:
-	ID ('=' DECIMALL)?
-	{
-		$txt = $ID.text + ":=" + $DECIMALL.text;
-	}
+fragment enumerationElement returns [ String txt ]
+@init	{ StringBuilder sb = new StringBuilder(); }
+@after	{ $txt = sb.toString(); }
+	: ID { sb.append($ID.text); } ('=' DECIMALL { sb.append(":=" + $DECIMALL.text); })?
 	;
 
 // TODO: not completed
@@ -216,40 +193,42 @@ varList
 	;
 	
 fragment
-varListElem 
-	: ID trailer? (arrayModifier)? ('=' (arrayConstantExpression | atom))?
+varListElem returns [ String txt ]
+@init	{ StringBuilder sb = new StringBuilder(); }
+@after	{ $txt = sb.toString();}
+	: ID { sb.append($ID.text); } (trailer { sb.append($trailer.txt); })? (arrayModifier { sb.append($arrayModifier.txt); })? 
+	('=' (ace=arrayConstantExpression { sb.append(" := " + $ace.txt); }| a=atom { sb.append(" := " + $a.txt); }))?
 	;
 
 arrayModifier returns [ String txt ]
 	: ( LBRACK arrayRange RBRACK )
-	{
-	$txt = "[ " + $arrayRange.txt + " ]";
-	}
+	{ $txt = "[ " + $arrayRange.txt + " ]"; }
 	| ( LBRACK first=arrayRange RBRACK ) ( LBRACK second=arrayRange RBRACK )
-	{
-	$txt = "[ " + $first.txt + ", " + $second.txt + " ]";
-	}
+	{ $txt = "[ " + $first.txt + ", " + $second.txt + " ]";	}
 	| ( LBRACK first=arrayRange RBRACK ) ( LBRACK second=arrayRange RBRACK ) ( LBRACK third=arrayRange RBRACK )
-	{
-	$txt = "[ " + $first.txt + ", " + $second.txt + ", " + $third.txt + " ]";
-	}
+	{ $txt = "[ " + $first.txt + ", " + $second.txt + ", " + $third.txt + " ]"; }
 	;
 
 arrayRange returns [ String txt ]
 	: l=DECIMALL ':' h=DECIMALL
-	{
-	$txt = $l.text + ".." + $h.text;
-	}
+	{ $txt = $l.text + ".." + $h.text; }
 	; 
 
-arrayConstantExpression
+arrayConstantExpression returns [ String txt ]
 	: ( LBRACK literalsList RBRACK )
-	| ( LBRACK literalsList RBRACK ) ( LBRACK literalsList RBRACK )
-	| ( LBRACK literalsList RBRACK ) ( LBRACK literalsList RBRACK ) ( LBRACK literalsList RBRACK )
+	{ $txt = $literalsList.txt; }
+	| ( LBRACK first=literalsList RBRACK ) ( LBRACK second=literalsList RBRACK )
+	{ $txt = $first.txt + ", " + $second.txt;	}
+	| ( LBRACK first=literalsList RBRACK ) ( LBRACK second=literalsList RBRACK ) ( LBRACK third=literalsList RBRACK )
+	{ $txt = $first.txt + ", " + $second.txt + ", " + $third.txt; }
 	;
 
-literalsList
-	: atom ( ',' atom )*
+literalsList returns [ String txt ]
+@init	{ StringBuilder sb = new StringBuilder(); }
+@after	{ $txt = sb.toString(); }
+	: a1=atom 
+	{ sb.append($a1.txt); }
+	( ',' aN=atom { sb.append(", " + $aN.txt); })*
 	;
 
 // "root" of TwinCAT grammar
@@ -292,9 +271,7 @@ smallStm returns [ List<String> statements ]
 
 // TODO: implement http://docs.python.org/release/2.6.4/reference/grammar.html
 exprStm returns [ String txt ]
-@after	{
-	System.out.println("exprStm: " + $txt);
-	}
+@after	{ System.out.println($txt); }
 	: t1=test
 	(
 	augAssign[$t1.text] t2=test { $txt = $t1.text + " " + $augAssign.txt + $t2.text; }
@@ -368,42 +345,20 @@ codeBlock returns [ List<String> statements ]
   	}
 	;
 
-test returns [ String txt, String asdrubale]
-	: orTest
-	{
-	$txt = $orTest.txt;
-	System.out.println($txt);
-	}
+test returns [ String txt]
+	: orTest { $txt = $orTest.txt; }
 	;
 
 orTest returns [ String txt ]
-	: at+=andTest ('or' at+=andTest)*
-	{
-	StringBuilder sb = new StringBuilder();
-	ListIterator<CommonTree> i = $at.listIterator();
-	while(i.hasNext()){
-		sb.append(i.next().getText());
-		if(i.hasNext()){
-			sb.append(" OR ");
-		}
-	}
-	$txt = sb.toString();
-	}
+@init	{ StringBuilder sb = new StringBuilder(); }
+@after	{ $txt = sb.toString();	}
+	: and1=andTest { sb.append($and1.txt); } ('or' andN=andTest { sb.append(" OR " + $andN.txt); })*
 	;
 
 andTest returns [ String txt ]
-	: nt+=notTest ('and' nt+=notTest)*
-	{
-	StringBuilder sb = new StringBuilder();
-	ListIterator<CommonTree> i = $nt.listIterator();
-	while(i.hasNext()){
-		sb.append(i.next().getText());
-		if(i.hasNext()){
-			sb.append(" AND ");
-		}
-	}
-	$txt = sb.toString();
-	}
+@init	{ StringBuilder sb = new StringBuilder(); }
+@after	{ $txt = sb.toString();	}
+	: not1=notTest { sb.append($not1.txt); } ('and' notN=notTest { sb.append(" AND " + $notN.txt); })*
 	;
 
 notTest returns [ String txt ]
@@ -412,24 +367,9 @@ notTest returns [ String txt ]
 	;
 	
 comparison returns [ String txt ]
-@init	{
-	StringBuilder sb = new StringBuilder();
-	}
-@after	{
-	$txt = sb.toString();
-	}
-	: ex1=expr
-	{
-	
-	sb.append($ex1.txt);
-	}
-	(compOperator exN=expr
-	{
-	sb.append(" " + $compOperator.txt + " ");
-	sb.append(" " + $exN.txt + " ");
-	}
-	)*
-
+@init	{ StringBuilder sb = new StringBuilder(); }
+@after	{ $txt = sb.toString();	}
+	: ex1=expr { sb.append($ex1.txt); } (compOperator exN=expr { sb.append(" " + $compOperator.txt + " " + $exN.txt + " "); })*
 	;
 	
 compOperator returns [ String txt ]
@@ -443,63 +383,77 @@ compOperator returns [ String txt ]
 	;
 	
 expr returns [ String txt ]
-:	xorExpr ('|' xorExpr)* // To be turned in twincat OR
-	{
-	$txt = new String("PIPPO");
-	}
+@init	{ StringBuilder sb = new StringBuilder(); }
+@after	{ $txt = sb.toString();	}
+	: xor1=xorExpr { sb.append($xor1.txt); } ('|' xorN=xorExpr { sb.append(" OR " + $xorN.txt); } )*
 	;
 
-xorExpr: 
-	andExpr ('^' andExpr)* // To be turned in twincat XOR
+xorExpr returns [ String txt ]
+@init	{ StringBuilder sb = new StringBuilder(); }
+@after	{ $txt = sb.toString();	}
+	: and1=andExpr { sb.append($and1.txt); } ('^' andN=andExpr { sb.append(" XOR " + $andN.txt); } )*
 	;
 	
-andExpr:
-	shiftExpr ('&' shiftExpr)* // To be turned in twincat AND
+andExpr returns [ String txt ]
+@init	{ StringBuilder sb = new StringBuilder(); }
+@after	{ $txt = sb.toString();	}
+	: shi1=shiftExpr { sb.append($shi1.txt); } ('&' shiN=shiftExpr { sb.append(" AND " + $shiN.txt); } )*
 	;
 	
-shiftExpr:
-	arithExpr (('<<'|'>>') arithExpr)* // To be turned in twincat SHL($aE1,$aE2), SHR($aE1,$aE2) respectively
+shiftExpr returns [ String txt ]
+@init	{ StringBuilder sb = new StringBuilder(); }
+@after	{ $txt = sb.toString();	}
+	: aril=arithExpr '<<' ariL=arithExpr { sb.append("SHL(" + $aril.txt + ", " + $ariL.txt + ")"); }
+	| arir=arithExpr '>>' ariR=arithExpr { sb.append("SHR(" + $arir.txt + ", " + $ariR.txt + ")"); }
+	| ari=arithExpr { sb.append($ari.txt); }
 	;
 	
-arithExpr:
-	term (('+'|'-') term)*
+arithExpr returns [ String txt ]
+@init	{ StringBuilder sb = new StringBuilder(); }
+@after	{ $txt = sb.toString();	}
+	: t1=term { sb.append($t1.txt); } (('+' { sb.append(" + "); } |'-' { sb.append(" - "); }) tN=term { sb.append($tN.txt); })*
 	;
 	
-term	: factor (('*'|'/'|'%') factor)* // % To be turned in twincat $f1 MOD $f2
+term returns [ String txt ]
+@init	{ StringBuilder sb = new StringBuilder(); }
+@after	{ $txt = sb.toString();	}
+	: f1=factor { sb.append($f1.txt); } (('*' { sb.append(" * "); } | '/' { sb.append(" / "); } | '%' { sb.append(" MOD "); }) fN=factor { sb.append($fN.txt); })*
 	;
 	
-factor	:  '(' expr ')' 
-	| ('+'|'-') factor | power
+factor returns [ String txt ]
+@init	{ StringBuilder sb = new StringBuilder(); }
+@after	{ $txt = sb.toString();	}
+	: '(' expr ')' { sb.append("(" + $expr.txt + ")"); }
+	| ('+' { sb.append("+"); } | '-' { sb.append("-"); } ) fact=factor { sb.append($fact.txt); }
+	| power { sb.append($power.txt); }
 	;
 	
-power	: atom ('**' factor)? // To be turned into EXPT($atom,$factor)
+power returns [ String txt ]
+@init	{ StringBuilder sb = new StringBuilder(); }
+@after	{ $txt = sb.toString();	}
+	: atp=atom '**' factor { sb.append("EXPT(" + $atp.txt + ", " + $factor.txt +")"); }
+	| at=atom { sb.append($at.txt); }
 	;
-atom	: literal
-	| ID trailer? arrayModifierEl?
+atom returns [ String txt ]
+@init	{ StringBuilder sb = new StringBuilder(); }
+@after	{ $txt = sb.toString();	}
+	: ID { sb.append($ID.text); } (trailer { sb.append($trailer.txt); })? (arrayModifierEl { sb.append($arrayModifierEl.txt); })?
+	| literal { sb.append($literal.txt); }
 	;
 	
-arrayModifierEl
+arrayModifierEl returns [ String txt ]
 	: ( LBRACK expr RBRACK )
-	| ( LBRACK expr RBRACK ) ( LBRACK expr RBRACK ) 
-	| ( LBRACK expr RBRACK ) ( LBRACK expr RBRACK ) ( LBRACK expr RBRACK )
+	{ $txt = "[ " +$expr.txt + "]"; }
+	| ( LBRACK first=expr RBRACK ) ( LBRACK second=expr RBRACK )
+	{ $txt =  "[ " + $first.txt + ", " + $second.txt + "]"; }
+	| ( LBRACK first=expr RBRACK ) ( LBRACK second=expr RBRACK ) ( LBRACK third=expr RBRACK )
+	{ $txt =  "[ " + $first.txt + ", " + $second.txt + ", " + $third.txt + "]"; }
 	;
 	
 trailer returns [ String txt ]
-	: ('.' iL+=ID)+
-	{
-	StringBuilder sb = new StringBuilder();
-	ListIterator<Token> i = $iL.listIterator();
-	while(i.hasNext()){
-		sb.append(i.next().getText());
-		if(i.hasNext()){
-			sb.append(".");
-		}
-	}	
-	}
-	;
-
-ID	: 
-	('a'..'z'|'A'..'Z'|'_') ('a'..'z'|'A'..'Z'|'0'..'9'|'_')*
+@init	{ StringBuilder sb = new StringBuilder(); }
+@after	{ $txt = sb.toString();	}
+	: ('.' ID { sb.append("." + $ID.text);})+
 	;
 
 singleFileInput
@@ -508,84 +462,91 @@ singleFileInput
 
 // === Literals ===
 // TODO: String initialization
-literal
-  : BINARYL
-  | HEXL
-  | FLOATINGPOINTL
-  | DECIMALL
-  | OCTALL
-  | timeL
-  | todL
-  | dateL
-  | datetimeL
-  | BOOLEANL
-  | CHARACTERL
-  | stringL
+literal returns [ String txt ]
+  : DECIMALL { $txt = $DECIMALL.text; }
+  | hexL { $txt = $hexL.txt; }
+  | FLOATINGPOINTL { $txt = $FLOATINGPOINTL.text; }
+  | binaryL { $txt = $binaryL.txt; }
+  | octalL { $txt = $octalL.txt; }
+  | timeL { $txt = $timeL.txt; }
+  | todL { $txt = $todL.txt; }
+  | dateL { $txt = $dateL.txt; }
+  | datetimeL { $txt = $datetimeL.txt; }
+  | booleanL { $txt = $booleanL.txt; }
+  | CHARACTERL { $txt = $CHARACTERL.text; }
+  | stringL { $txt = $stringL.txt; }
   ;
 
-BINARYL
-  : 'b!' ('0'..'1')+
-  ;
+binaryL returns [ String txt ]
+	: 'b!' BINDIGITS { $txt = "2#" + $BINDIGITS.text; }
+	;
+
+fragment BINDIGITS : ('0'..'1')+ ;
   
-HEXL
-  : 'h!' HEXDIGIT+
-  ;
+hexL returns [ String txt ]
+	: 'h!' HEXDIGITS { $txt = "16#" + $HEXDIGITS.text; }
+ 	;
 
 FLOATINGPOINTL
-  :    ('0'..'9')* '.' ('0'..'9')+ Exponent?
-  |    ('0'..'9')+ Exponent
+	:    ('0'..'9')* '.' ('0'..'9')+ EXPONENT?
+	|    ('0'..'9')+ EXPONENT
+	;
+
+fragment EXPONENT : ('e'|'E') ('+'|'-')? ('0'..'9')+ ; 
+
+fragment HEXDIGITS : ('0'..'9'|'a'..'f'|'A'..'F')+ ;
+
+fragment OCTDIGITS : ('0'..'7')+ ;
+	
+DECIMALL : ('0' | '1'..'9' '0'..'9'*) ;
+
+octalL returns [ String txt ]
+	: 'o!' OCTDIGITS { $txt = "8#" + $OCTDIGITS.text; }
+	;
+
+// TODO: Check & convert in twincat
+fragment EscapeSequence : '\\' ('b'|'t'|'n'|'f'|'r'|'\"'|'\''|'\\') | OctalEscape ;
+
+timeL returns [ String txt ]
+  : 't!' ( d=DECIMALL 'd' ) ( h=DECIMALL 'h' )? ( m=DECIMALL 'm' )? ( s=DECIMALL 's' )? ( ms=DECIMALL 'ms' )? 
+  { $txt = "T#" + $d.text + ($h == null?"":$h.text + "h") + ($m == null?"":$m.text + "m") + ($s == null?"":$s.text + "s") + ($ms == null?"":$ms.text + "ms"); }
+  | 't!' ( d=DECIMALL 'd' )? ( h=DECIMALL 'h' ) ( m=DECIMALL 'm' )? ( s=DECIMALL 's' )? ( ms=DECIMALL 'ms' )? 
+  { $txt = "T#" + ($d == null?"":$d.text + "d") + $h.text + ($m == null?"":$m.text + "m") + ($s == null?"":$s.text + "s") + ($ms == null?"":$ms.text + "ms"); }
+  | 't!' ( d=DECIMALL 'd' )? ( h=DECIMALL 'h' )? ( m=DECIMALL 'm' ) ( s=DECIMALL 's' )? ( ms=DECIMALL 'ms' )?
+  { $txt = "T#" + ($d == null?"":$d.text + "d") + ($h == null?"":$h.text + "h") + $m.text + ($s == null?"":$s.text + "s") + ($ms == null?"":$ms.text + "ms"); }
+  | 't!' ( d=DECIMALL 'd' )? ( h=DECIMALL 'h' )? ( m=DECIMALL 'm' )? ( s=DECIMALL 's' ) ( ms=DECIMALL 'ms' )?
+  { $txt = "T#" + ($d == null?"":$d.text + "d") + ($h == null?"":$h.text + "h") + ($m == null?"":$m.text + "m") + $s.text + ($ms == null?"":$ms.text + "ms"); }
+  | 't!' ( d=DECIMALL 'd' )? ( h=DECIMALL 'h' )? ( m=DECIMALL 'm' )? ( s=DECIMALL 's' )? ( ms=DECIMALL 'ms' )
+  { $txt = "T#" + ($d == null?"":$d.text + "d") + ($h == null?"":$h.text + "h") + ($m == null?"":$m.text + "m") + ($s == null?"":$s.text + "s") + $ms.text; }
   ;
 
-fragment
-Exponent : ('e'|'E') ('+'|'-')? ('0'..'9')+ ; 
-
-fragment
-HEXDIGIT
-  : ('0'..'9'|'a'..'f'|'A'..'F')
+todL returns [ String txt ]
+  : 'tod!' TODLDIGITS { $txt = "TOD#" + $TODLDIGITS.text; }
   ;
+  
+fragment TODLDIGITS : DECIMALL ':' DECIMALL ':' DECIMALL ( '.' DECIMALL )? ;
 
-DECIMALL
-  : ('0' | '1'..'9' '0'..'9'*)
+dateL returns [ String txt ]
+  : 'd!' DATEDIGITS { $txt = "D#" + $DATEDIGITS.text; }
   ;
+  
+fragment DATEDIGITS : DECIMALL '-' DECIMALL '-' DECIMALL;
 
-OCTALL
-  : 'o!' ('0'..'7')+
+datetimeL returns [ String txt ]
+  : 'dt!' DATETIMEDIGITS { $txt = "DT#" + $DATETIMEDIGITS.text; }
   ;
-
-// FIX: Will be not turned into twincat code
-fragment
-EscapeSequence
-  :   '\\' ('b'|'t'|'n'|'f'|'r'|'\"'|'\''|'\\')
-  |   OctalEscape
-  ;
-
-timeL
-  : 't!' ( DECIMALL 'd' ) ( DECIMALL 'h' )? ( DECIMALL 'm' )? ( DECIMALL 's' )? ( DECIMALL 'ms' )? 
-  | 't!' ( DECIMALL 'd' )? ( DECIMALL 'h' ) ( DECIMALL 'm' )? ( DECIMALL 's' )? ( DECIMALL 'ms' )? 
-  | 't!' ( DECIMALL 'd' )? ( DECIMALL 'h' )? ( DECIMALL 'm' ) ( DECIMALL 's' )? ( DECIMALL 'ms' )? 
-  | 't!' ( DECIMALL 'd' )? ( DECIMALL 'h' )? ( DECIMALL 'm' )? ( DECIMALL 's' ) ( DECIMALL 'ms' )? 
-  | 't!' ( DECIMALL 'd' )? ( DECIMALL 'h' )? ( DECIMALL 'm' )? ( DECIMALL 's' )? ( DECIMALL 'ms' ) 
-  ;
-
-todL
-  : 'tod!' DECIMALL ':' DECIMALL ':' DECIMALL ( '.' DECIMALL )?
-  ;
-
-dateL
-  : 'd!' DECIMALL '-' DECIMALL '-' DECIMALL
-  ;
-
-datetimeL
-  : 'dt!' DECIMALL '-' DECIMALL '-' DECIMALL '-' DECIMALL ':' DECIMALL
-  ;
+  
+fragment DATETIMEDIGITS : DECIMALL '-' DECIMALL '-' DECIMALL '-' DECIMALL ':' DECIMALL;
   
 CHARACTERL
   :   '\'' ( EscapeSequence | ~('\''|'\\') ) '\''
   ;
 
-stringL
-  :  '"' ( EscapeSequence | ~('\\'|'"') )* '"'
+stringL returns [ String txt ]
+  :  '"' stringLContent '"' { $txt = "'" + $stringLContent.text + "'"; }
   ;
+  
+fragment stringLContent : ( EscapeSequence | ~('\\'|'"') )*;
   
 fragment
 OctalEscape
@@ -593,6 +554,10 @@ OctalEscape
   |   '\\' ('0'..'7') ('0'..'7')
   |   '\\' ('0'..'7')
   ;
+
+ID	: 
+	('a'..'z'|'A'..'Z'|'_') ('a'..'z'|'A'..'Z'|'0'..'9'|'_')*
+	;
 
 FF    : '\u000C';
 TAB   : '\t';
@@ -622,9 +587,7 @@ EQUAL   : '==' ;
 NOTEQUAL  : '!=' ;
 ALT_NOTEQUAL  : '<>' ;
 LESSEQUAL : '<=' ;
-LEFTSHIFT : '<<' ;
 GREATEREQUAL  : '>=' ;
-RIGHTSHIFT  : '>>' ;
 PLUSEQUAL : '+=' ;
 MINUSEQUAL  : '-=' ;
 DOUBLESTAR  : '**' ;
@@ -636,7 +599,9 @@ PERCENTEQUAL  : '%=' ;
 ANDEQUAL  : '&=' ;
 CIRCUMFLEXEQUAL : '^=' ;
 LEFTSHIFTEQUAL  : '<<=' ;
+LEFTSHIFT	: '<<'; 
 RIGHTSHIFTEQUAL : '>>=' ;
+RIGHTSHIFT	: '>>'; 
 DOT   : '.' ;
 COMMA   : ',';
 AT    : '@' ;

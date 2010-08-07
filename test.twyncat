@@ -34,9 +34,12 @@ prog test:
 		myVar = False
 	minni = 8
 	while True :
-		instruction = 100 a b c
-		instruction2 = b!00010010
-		instruction3 = h!00FFAA12
+		instruction += 100 + a + b + c
+		instruction -= 102002
+		instruction *= 102002 != 3
+		variabile = pippo - (pluto << (4 + result))
+		careIt %= 2
+		instruction = 102002**4
 		repeat:
 			instr(a=5)
 			instrb(x=a+b,z=c)
