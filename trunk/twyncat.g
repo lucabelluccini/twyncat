@@ -13,9 +13,12 @@ tokens {
 }
 
 @parser::header {
+import java.util.ListIterator;
+import java.util.LinkedList;
 }
 
 @lexer::header {
+import java.util.ListIterator;
 import java.util.LinkedList;
 }
 
@@ -27,162 +30,161 @@ Stack<Integer> indentations = new Stack<Integer>();
 LinkedList<Token> tokens = new LinkedList<Token>();
 
 public void emit(Token token) {
-  // Check if new token starts from 0
-  if (token.getCharPositionInLine() == 0) {
-  	// Check if token starting from 0 is not one of the allowed ones
-  	if ((token.getType() != LEADINGWS)&&(token.getType() != INDENT)&&(token.getType() != DEDENT)/*&&(token.getType() != COMMENT)*/) {
-  		// Pop all DEDENTS in the indentations stack before the matched token  		
-  		while( indentations.empty() == false) {
-  			indentations.pop();
-			Token t = new ClassicToken(DEDENT, new String("")); t.setLine(token.getLine());
-			emit(t);
-			System.out.println("DED at line " + token.getLine());
+	// Check if new token starts from 0
+	if (token.getCharPositionInLine() == 0) {
+  		// Check if token starting from 0 is not one of the allowed ones
+	  	if ((token.getType() != LEADINGWS)&&(token.getType() != INDENT)&&(token.getType() != DEDENT)/*&&(token.getType() != COMMENT)*/) {
+  			// Pop all DEDENTS in the indentations stack before the matched token  		
+  			while( indentations.empty() == false) {
+  				indentations.pop();
+				Token t = new ClassicToken(DEDENT, new String("")); t.setLine(token.getLine());
+				emit(t);
+				// System.out.println("DED at line " + token.getLine());
+			}	
 		}
-		
-  	}
-  }
-  state.token = token;
-  tokens.add(token);
+	}
+	state.token = token;
+	tokens.add(token);
 }
 
 public Token nextToken() {
-  super.nextToken();
-  // Check if it's EOF's time
-  if ( tokens.size() == 0 ) {
-    // Check if indentations stack is empty
-    if ( !indentations.empty() ) {
-      // Return DEDENT tokens until stack is empty
-      indentations.pop(); 
-      System.out.println("DED at EOF");
-      return new ClassicToken(DEDENT);
-    }
-    return Token.EOF_TOKEN;
-  }
-  return (Token)tokens.remove();
+	super.nextToken();
+	// Check if it's EOF's time
+	if ( tokens.size() == 0 ) {
+	// Check if indentations stack is empty
+		if ( !indentations.empty() ) {
+			// Return DEDENT tokens until stack is empty
+			indentations.pop(); 
+			// System.out.println("DED at EOF");
+			return new ClassicToken(DEDENT);
+		}
+		return Token.EOF_TOKEN;
+	}
+	return (Token)tokens.remove();
 }
 
-protected void mismatch(IntStream input, int ttype, BitSet follow)
-  throws RecognitionException
-{
-  throw new MismatchedTokenException(ttype, input);
+protected void mismatch(IntStream input, int ttype, BitSet follow) throws RecognitionException {
+	throw new MismatchedTokenException(ttype, input);
 }
 
 }
 
-@parser:members{
-File f;
-Block currentBlock = null;
-}
-
-// Alter code generation so catch-clauses get replace with
-// this action.
+// Alter code generation so catch-clauses get replace with this action.
 @rulecatch {
-	catch (RecognitionException e) {
-		throw e;
+	catch (RecognitionException re) {
+		throw re;
 	}
 }
 
-// === Boolean Literal ===
-BOOLEANL
-	: 'True' | 'False'
+BOOLEANL returns [ String txt ]
+	: 'True' { $txt = "TRUE"; }
+	| 'False' { $txt = "FALSE"; }
 	;
-// return bool
-// print out
 
-// === Standard Data Type ===
-SDT
-options{ k = 4; }
-  : 'bool'
-  | 'byte'  // {0 to 255}
-  | 'word'  // {0 to 65535}
-  | 'dword' // {0 to 4294967295}
-  | 'sint'  // {-128 to 127}
-  | 'usint' // {0 to 255}
-  | 'int'	
-  | 'uint'  // {0 to 65535}
-  | 'dint'  // {-2147483648 to 2147483647}
-  | 'udint' // {0 to 4294967295}
-  | 'real'  // {~ -3.402823 x 10^38 to ~ 3.402823 x 1038}
-  | 'lreal' // {~ -1.79769313486231E308 to ~ 1.79769313486232E308}
-  | 'string'  // {(dim) 'This is a String';}
-  | 'time'  // {T#0ms to T#71582m47s295ms} - T#9d8h7m6s5ms
-  | 'tod'   // {TOD#00:00 to TOD#1193:02:47.295} - TOD#00:00:00.001
-  | 'date'  // {D#1970-01-01 to D#2106-02-06} - D#1972-03-29
-  | 'dt'    // {DT#1970-01-01-00:00 to DT#2106-02-06-06:28:15}
-  ;
-// return type for each one
+SDT returns [ String txt ]
+	: 'bool' { $txt = "BOOL"; }
+	| 'byte' { $txt = "BYTE"; } 
+	| 'word' { $txt = "WORD"; }
+	| 'dword' { $txt = "DWORD"; }
+	| 'sint' { $txt = "SINT"; } 
+	| 'usint' { $txt = "USINT"; }
+	| 'int' { $txt = "INT"; }	
+	| 'uint' { $txt = "UINT"; }
+	| 'dint' { $txt = "DINT"; }
+	| 'udint' { $txt = "UDINT"; }
+	| 'real' { $txt = "REAL"; }
+	| 'lreal' { $txt = "LREAL"; }
+	| 'string' { $txt = "STRING"; }
+	| 'time' { $txt = "TIME"; }
+	| 'tod' { $txt = "TIME_OF_DAY"; }
+	| 'date' { $txt = "DATE"; }
+	| 'dt' { $txt = "DATE_AND_TIME"; }
+	;
 
-program returns [Program p]
+
+program
 	: 'prog' ID ':' codeBlock
-	{
-		p = new Program($ID.text);			// creates a Program Model
-		for(String s : $codeBlock.statements.keys()){	// for each Statement Model in codeBlock (cB returns a Statement list)
-			p.add($codeBlock.statements.get(s));	// adds each Statement Model to Program Model
-		}
-	}
 	;
 
-function returns [Function f]
+function
 	: 'func' ID ':' codeBlock
-	{
-		f = new Function($ID.text);		// creates a Function Model
-		for(Statement s : $codeBlock){		// for each Statement Model in codeBlock (returns a Statement list)
-			f.add(s);			// adds each Statement Model to Function Model
-		}
-	}
 	;
 
-callFunc returns [FunctionCall fc]
+callFunc returns [ String txt ]
 	: ID trailer? '(' callFuncArgs ')'
 	{
-		fc = new FunctionCall($ID.text);	// creates a Function Call Model
-		for(String fcaK : $callFuncArgs.args.keys()){	// for each argument in callFuncArgs (returns a Map<String,FunctionCallArg>)
-			FunctionCallArg fca = $callFuncArgs.args.get(fcaK);
-			// performs the check each argument is the same type of the value passed
-			// if symbols.get($ID.text + $trailer.text + "." + fcaK).getType() == fca.getType()
-			fc.add(fca);	
-		}
+		$txt = $ID.text + ($trailer.text == null?"":$trailer.text) + "(" + $callFuncArgs.txt + ")";
+		System.out.println($txt);
 	}
 	;
 	
-callFuncArgs returns [Map<String,FunctionCallArg> args]
+callFuncArgs returns [String txt]
 	:  ( argsN+=ID '=' argsV+=test ( ',' argsN+=ID '=' argsV+=test)*)? 
 	{
-		args = new HashMap<String,FunctionCallArg>();
-		for(Token t : $argsN){
-			FunctionCallArg fca = new FunctionCallArg(t.getText(),
+		StringBuilder sb = new StringBuilder();
+		ListIterator<CommonTree> vI = $argsV.listIterator();
+		ListIterator<CommonToken> nI = $argsN.listIterator();
+		while(vI.hasNext()){
+			sb.append(nI.next().getText() + " := " + vI.next().getText());
+			if(vI.hasNext()){
+				sb.append(", ");
+			}
 		}
+		$txt = sb.toString();
 	}
 	;
 	
-
-// check if ID trailer? exists as function name
-// check if IDs are declared as ID trailer? ID
-// turn '=' in ':=' and printout
-  
-alias	
-	: 'alias' ID '=' exprStm	
+alias returns [ String txt ]
+	: 'alias' ID '=' exprStm
+	{
+		$txt = "TYPE " + $ID.text + ":" + $exprStm.txt + "; " + "END_TYPE";
+		System.out.println($txt);
+	}	
 	;
-// check if alias exists
-// print out
 
-pointer	
-	: 'pointer' '.' (t=SDT | t=ID) n+=ID (',' n+=ID)* //-> template(type={$t.text},names={$n}) "<names>:POINTER TO <type>"
+pointer	returns [ List<String> statements ]
+	: 'pointer' '.' (ts=SDT | ti=ID) n+=ID (',' n+=ID)*
+	{
+		$statements = new LinkedList<String>();
+		ListIterator<Token> nI = $n.listIterator();
+		
+		while(nI.hasNext()){
+			$statements.add(new String(nI.next().getText() + " :POINTER TO " + $ts.text + $ti.text));
+			
+		}
+	}	
 	;
 // for each ID, declare a variable named scope.ID giving type pointer to t
 // for each ID, print out twincat syntax for pointer
-
-enumeration	:
-	'enum' '.' en=ID '=' LCURLY enumerationElementList RCURLY //-> enum(name={$en},elementList={$enumerationElementList.st})
+enumeration returns [ String txt ]
+	:	'enum' '.' en=ID '=' LCURLY enumerationElementList RCURLY
+	{
+		$txt = "TYPE " + $en.text + ":(" + $enumerationElementList.txt + "); END_TYPE";
+	}
 	;
 
-enumerationElementList 
-	:  enumerationElement? (',' enumerationElement)* 
+enumerationElementList returns [ String txt ]
+	:  eE+=enumerationElement? (',' eE+=enumerationElement)*
+	{
+		StringBuilder sb = new StringBuilder();
+		ListIterator<CommonTree> i = $eE.listIterator();
+		while(i.hasNext()) {
+			sb.append(i.next().getText()); // FIX TXT!!!!!
+			if(i.hasNext()){
+				sb.append(", ");
+			}
+		}
+		$txt = sb.toString();
+	} 
 	;
 
 fragment	
-enumerationElement :
+enumerationElement returns [ String txt ]
+	:
 	ID ('=' DECIMALL)?
+	{
+		$txt = $ID.text + ":=" + $DECIMALL.text;
+	}
 	;
 
 // TODO: not completed
@@ -201,17 +203,16 @@ structureElement
 	;
 
 // TODO within : arrays, structures, strings (and respective initializations)
-definition :
-	(( 'in' | 'out' | 'inout' ) DOT )? (( 'persistent' | 'retain' | 'constant') DOT )? (SDT | ID) varList
+definition
+	: (( 'in' | 'out' | 'inout' ) DOT )? (( 'persistent' | 'retain' | 'constant') DOT )? (SDT | ID) varList
 	;
 
 globaldefinition 
-	:
-	(( 'config' | 'global' ) DOT )? (( 'persistent' | 'retain' | 'constant') DOT )? (SDT | ID) varList
+	: (( 'config' | 'global' ) DOT )? (( 'persistent' | 'retain' | 'constant') DOT )? (SDT | ID) varList
 	;
 
-varList :
-	varListElem (',' varListElem )*
+varList
+	: varListElem (',' varListElem )*
 	;
 	
 fragment
@@ -219,61 +220,56 @@ varListElem
 	: ID trailer? (arrayModifier)? ('=' (arrayConstantExpression | atom))?
 	;
 
-arrayModifier
+arrayModifier returns [ String txt ]
 	: ( LBRACK arrayRange RBRACK )
-	| ( LBRACK first=arrayRange RBRACK ) ( LBRACK second=arrayRange RBRACK ) 
+	{
+	$txt = "[ " + $arrayRange.txt + " ]";
+	}
+	| ( LBRACK first=arrayRange RBRACK ) ( LBRACK second=arrayRange RBRACK )
+	{
+	$txt = "[ " + $first.txt + ", " + $second.txt + " ]";
+	}
 	| ( LBRACK first=arrayRange RBRACK ) ( LBRACK second=arrayRange RBRACK ) ( LBRACK third=arrayRange RBRACK )
+	{
+	$txt = "[ " + $first.txt + ", " + $second.txt + ", " + $third.txt + " ]";
+	}
 	;
 
-arrayRange
-	: l=DECIMALL ':' h=DECIMALL //-> arrayRange(low={$l.text},high={$h.text}) // When more TOKENS appear in a Parser Rule, it is necessary to label them, removing ambiguities
+arrayRange returns [ String txt ]
+	: l=DECIMALL ':' h=DECIMALL
+	{
+	$txt = $l.text + ".." + $h.text;
+	}
 	; 
 
-// === Array Constant Expression ===
-/* EXAMPLE
-[1,2,3,4,5]
-[1,2][3,4][5,6]
-*/
 arrayConstantExpression
 	: ( LBRACK literalsList RBRACK )
 	| ( LBRACK literalsList RBRACK ) ( LBRACK literalsList RBRACK )
 	| ( LBRACK literalsList RBRACK ) ( LBRACK literalsList RBRACK ) ( LBRACK literalsList RBRACK )
 	;
 
-// === Literals List ===
-/* EXAMPLE
-o!66
-h!AF,h!1024,b!0001010
-*/	
 literalsList
 	: atom ( ',' atom )*
 	;
 
 // "root" of TwinCAT grammar
-// TODO: functions, imports, ...
-file
-	@init {
-		f = new File();				// creates a File Model
-		currentBlock = f;			// sets currentBlock to File Model
-	}
-	: gs+=globalStm* fs+=function* program EOF //-> file(globalStm = {$gs}, function = {$fs}, program = {$program.st})
-	{
-		for(Statement gStm : $gs){
-			currentBlock.add(gStm);
-		}
-	}
+file	: gs+=globalStm* fs+=function* program EOF
 	;
 
-statement [returns Statement statement]
+statement returns [ List<String> statements ]
 	: simpleStm
 	| compoundStm
 	;
 
-globalStm
-	: smallGlobalStm (SEMI)? NEWLINE //-> {$smallGlobalStm.st}
+globalStm returns [ List<String> statements ]
+	: smallGlobalStm (SEMI)? NEWLINE
+	{
+	$statements = new LinkedList<String>();
+	//$statements.addAll($smallGlobalStm.statements);
+	}
 	;
 
-smallGlobalStm
+smallGlobalStm returns [ List<String> statements ]
 	: alias //-> {$alias.st}
 	| pointer //-> {$pointer.st}
 	| enumeration //-> {$enumeration.st}
@@ -282,175 +278,229 @@ smallGlobalStm
 	;
 
 // TODO: choose if we let more small statements per line
-simpleStm [returns Statement statement]
-  : smallStm (SEMI)? NEWLINE
-  ;
+simpleStm returns [ List<String> statements ]
+	: smallStm (SEMI)? NEWLINE
+	;
 
 // TODO: function calls
-smallStm [returns Statement statement]
-  : exprStm
-  | flowStm
-  | repeatUntilStm
-  | definition
-  ;
+smallStm returns [ List<String> statements ]
+	: exprStm
+	| flowStm
+	| repeatUntilStm
+	| definition
+	;
 
 // TODO: implement http://docs.python.org/release/2.6.4/reference/grammar.html
-exprStm
-  : test (augAssign (test) | ('=' (test))*)
-  ;
-
-augAssign
-	: '+='
-	| '-=' 
-	| '*=' 
-	| '/=' 
-	| '%=' 
-	| '&=' 
-	| '|=' 
-	| '^=' 
-	| '<<='
-	| '>>='
-	| '**='
-	| '//='
+exprStm returns [ String txt ]
+@after	{
+	System.out.println("exprStm: " + $txt);
+	}
+	: t1=test
+	(
+	augAssign[$t1.text] t2=test { $txt = $t1.text + " " + $augAssign.txt + $t2.text; }
+	| ('=' t3=test) { $txt = $t1.text + " := " + $t3.txt; }
+	)
 	;
+
+augAssign [ String pre ] returns [ String txt ]
+	: '+=' { $txt = ":= " + $pre + " + "; }
+	| '-=' { $txt = ":= " + $pre + " - "; }
+	| '*=' { $txt = ":= " + $pre + " * "; }
+	| '/=' { $txt = ":= " + $pre + " / "; }
+	| '%=' { $txt = ":= " + $pre + " MOD "; }
+	| '&=' { $txt = ":= " + $pre + " AND "; }
+	| '|=' { $txt = ":= " + $pre + " OR "; }
+	;
+
 flowStm
-  : returnStm
-  | exitStm
-  | callFunc
-  ;
+	: returnStm
+	| exitStm
+	| callFunc
+	;
 
 exitStm
-  : 'exit'
-  ;
+	: 'exit'
+	;
 
 returnStm
-  : 'return'
-  ; 
+	: 'return'
+	; 
 
 compoundStm
-  : ifStm
-  | caseStm
-  | forStm
-  | whileStm
-  ;
+	: ifStm
+	| caseStm
+	| forStm
+	| whileStm
+	;
 
 ifStm
-  : 'if' test COLON codeBlock elifClause* ('else' COLON codeBlock)?
-  ;
+	: 'if' test COLON codeBlock elifClause* ('else' COLON codeBlock)?
+	;
 
 elifClause
-  : 'elif' test COLON codeBlock
-  ;
+	: 'elif' test COLON codeBlock
+	;
 
 caseStm
-  : 'case' test COLON NEWLINE INDENT caseElementsStm DEDENT
-  ;
+	: 'case' test COLON NEWLINE INDENT caseElementsStm DEDENT
+	;
   
 caseElementsStm
-  : ( test COLON codeBlock )+ 'default' COLON codeBlock
-  ;
+	: ( test COLON codeBlock )+ 'default' COLON codeBlock
+	;
 
 forStm
-  : 'for' ID 'in' LCURLY test ':' test ':' test RCURLY COLON codeBlock
-  ;
+	: 'for' ID 'in' LCURLY test ':' test ':' test RCURLY COLON codeBlock
+	;
   
 whileStm
-  : 'while' test COLON codeBlock
-  ;
+	: 'while' test COLON codeBlock
+	;
 
 repeatUntilStm
-  : 'repeat' COLON codeBlock 'until' test
-  ;
-
-codeBlock [returns Map<String,Statement> statements]
-@init{
-	statement = new Map<String,Statement>();
-}
-  : simpleStm
-  {
-	// insert in statement (simpleStm)
-  }
-  | NEWLINE INDENT ( stms+=statement )+ DEDENT
-  {
-	// insert in statement ($stms.statement)
-  }
-  ;
-
-// TODO: implement http://docs.python.org/release/2.6.4/reference/grammar.html
-test
-  : orTest
-  ;
-
-orTest	:
-	andTest ('or' andTest)*
+	: 'repeat' COLON codeBlock 'until' test
 	;
 
-andTest	:
-	notTest ('and' notTest)*
+codeBlock returns [ List<String> statements ]
+	: stms+=simpleStm | NEWLINE INDENT ( stms+=statement )+ DEDENT
+	{
+  	$statements = new LinkedList<String>();
+  	}
 	;
 
-notTest :
-	 'not' notTest | comparison
+test returns [ String txt, String asdrubale]
+	: orTest
+	{
+	$txt = $orTest.txt;
+	System.out.println($txt);
+	}
+	;
+
+orTest returns [ String txt ]
+	: at+=andTest ('or' at+=andTest)*
+	{
+	StringBuilder sb = new StringBuilder();
+	ListIterator<CommonTree> i = $at.listIterator();
+	while(i.hasNext()){
+		sb.append(i.next().getText());
+		if(i.hasNext()){
+			sb.append(" OR ");
+		}
+	}
+	$txt = sb.toString();
+	}
+	;
+
+andTest returns [ String txt ]
+	: nt+=notTest ('and' nt+=notTest)*
+	{
+	StringBuilder sb = new StringBuilder();
+	ListIterator<CommonTree> i = $nt.listIterator();
+	while(i.hasNext()){
+		sb.append(i.next().getText());
+		if(i.hasNext()){
+			sb.append(" AND ");
+		}
+	}
+	$txt = sb.toString();
+	}
+	;
+
+notTest returns [ String txt ]
+	: 'not' nt=notTest { $txt = "NOT " + $nt.txt; }
+	| comparison { $txt = $comparison.txt; }
 	;
 	
-comparison
-	: expr (compOperator expr)*
+comparison returns [ String txt ]
+@init	{
+	StringBuilder sb = new StringBuilder();
+	}
+@after	{
+	$txt = sb.toString();
+	}
+	: ex1=expr
+	{
+	
+	sb.append($ex1.txt);
+	}
+	(compOperator exN=expr
+	{
+	sb.append(" " + $compOperator.txt + " ");
+	sb.append(" " + $exN.txt + " ");
+	}
+	)*
+
 	;
 	
-compOperator
-	: '<'
-	| '>'
-	| '=='
-	| '>='
-	| '<='
-	| '<>'
-	| '!='
+compOperator returns [ String txt ]
+	: '<' { $txt = "<"; }
+	| '>' { $txt = ">"; }
+	| '==' { $txt = "="; }
+	| '>=' { $txt = ">="; }
+	| '<=' { $txt = "<="; }
+	| '<>' { $txt = "<>"; }
+	| '!=' { $txt = "<>"; }
 	;
 	
-expr:
-	xorExpr ('|' xorExpr)*
+expr returns [ String txt ]
+:	xorExpr ('|' xorExpr)* // To be turned in twincat OR
+	{
+	$txt = new String("PIPPO");
+	}
 	;
 
 xorExpr: 
-	andExpr ('^' andExpr)*
+	andExpr ('^' andExpr)* // To be turned in twincat XOR
 	;
 	
 andExpr:
-	shiftExpr ('&' shiftExpr)*
+	shiftExpr ('&' shiftExpr)* // To be turned in twincat AND
 	;
 	
 shiftExpr:
-	arithExpr (('<<'|'>>') arithExpr)*
+	arithExpr (('<<'|'>>') arithExpr)* // To be turned in twincat SHL($aE1,$aE2), SHR($aE1,$aE2) respectively
 	;
 	
 arithExpr:
 	term (('+'|'-') term)*
 	;
 	
-term
-	: factor (('*'|'/'|'%'|'//') factor)*
+term	: factor (('*'|'/'|'%') factor)* // % To be turned in twincat $f1 MOD $f2
 	;
 	
-factor
-	:  '(' expr ')' 
-	| ('+'|'-'|'~') factor | power
+factor	:  '(' expr ')' 
+	| ('+'|'-') factor | power
 	;
 	
-power
-	: atom ('**' factor)?
+power	: atom ('**' factor)? // To be turned into EXPT($atom,$factor)
 	;
-atom
-	: literal
-	| ID trailer?
+atom	: literal
+	| ID trailer? arrayModifierEl?
 	;
 	
-trailer
-	: ('.' ID)+
+arrayModifierEl
+	: ( LBRACK expr RBRACK )
+	| ( LBRACK expr RBRACK ) ( LBRACK expr RBRACK ) 
+	| ( LBRACK expr RBRACK ) ( LBRACK expr RBRACK ) ( LBRACK expr RBRACK )
+	;
+	
+trailer returns [ String txt ]
+	: ('.' iL+=ID)+
+	{
+	StringBuilder sb = new StringBuilder();
+	ListIterator<Token> i = $iL.listIterator();
+	while(i.hasNext()){
+		sb.append(i.next().getText());
+		if(i.hasNext()){
+			sb.append(".");
+		}
+	}	
+	}
 	;
 
-ID  : 
-  ('a'..'z'|'A'..'Z'|'_') ('a'..'z'|'A'..'Z'|'0'..'9'|'_')*
-  ;
+ID	: 
+	('a'..'z'|'A'..'Z'|'_') ('a'..'z'|'A'..'Z'|'0'..'9'|'_')*
+	;
 
 singleFileInput
   : (NEWLINE | statement)* EOF
@@ -502,6 +552,7 @@ OCTALL
   : 'o!' ('0'..'7')+
   ;
 
+// FIX: Will be not turned into twincat code
 fragment
 EscapeSequence
   :   '\\' ('b'|'t'|'n'|'f'|'r'|'\"'|'\''|'\\')
@@ -544,7 +595,6 @@ OctalEscape
   ;
 
 FF    : '\u000C';
-//HASH    : '#';
 TAB   : '\t';
 CR    : '\r';
 LPAREN    : '(' {implicitLineJoiningLevel++;} ;
@@ -587,8 +637,6 @@ ANDEQUAL  : '&=' ;
 CIRCUMFLEXEQUAL : '^=' ;
 LEFTSHIFTEQUAL  : '<<=' ;
 RIGHTSHIFTEQUAL : '>>=' ;
-DOUBLESTAREQUAL : '**=' ;
-DOUBLESLASHEQUAL: '//=' ;
 DOT   : '.' ;
 COMMA   : ',';
 AT    : '@' ;
@@ -641,7 +689,7 @@ LEADINGWS
 					spaces[i] = ' ';
 				Token t = new ClassicToken(INDENT, new String(spaces)); t.setLine($line);
 				emit( t );
-				System.out.println("IND Spaces: " + nSpaces + " at line " + $line);
+				//System.out.println("IND Spaces: " + nSpaces + " at line " + $line);
 			} else if ( nSpaces < lastIndentation ) {
 				if ( indentations.search(nSpaces) != -1 ) {
 				    boolean first = true;
@@ -655,17 +703,18 @@ LEADINGWS
 								spaces[i] = ' ';
 				    			Token t = new ClassicToken(DEDENT, new String(spaces)); t.setLine($line);
 				    			emit(t);
-							System.out.println("DED Spaces: " + nSp + " at line " + $line);
+							//System.out.println("DED Spaces: " + nSp + " at line " + $line);
 				    		} else {
 		           				int nSp = indentations.pop();
 							Token t = new ClassicToken(DEDENT, new String("")); t.setLine($line);
 							emit(t);
-							System.out.println("DED Spaces: " + nSp + " at line " + $line);
+							//System.out.println("DED Spaces: " + nSp + " at line " + $line);
 						}
 					} else { break; }
 				    }
 				} else {
-					System.out.println("ERROR");
+					// Should raise IndentationException
+					System.out.println("ERROR in indentation");
 				}
 			}
 			$channel = HIDDEN;
