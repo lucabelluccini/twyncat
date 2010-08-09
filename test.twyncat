@@ -36,10 +36,14 @@ prog test:
 	while True :
 		instruction += 100 + a + b + c
 		instruction -= 102002
-		instruction *= 102002 != 3
-		variabile = pippo - (pluto << (4 + result))
+		instruction = 102002 != 3
+		valueHEX = h!aaFF3000 + h!0000f
+		valueBIN = b!00001001 + b!00001
+		variabile = (pippo - (pluto << (4 + result)) << 100) >> 2
 		careIt %= 2
 		instruction = 102002**4
+		value += base**exponent
+		value %= base**10
 		repeat:
 			instr(a=5)
 			instrb(x=a+b,z=c)

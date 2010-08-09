@@ -118,14 +118,7 @@ callFunc returns [ String txt ]
 callFuncArgs returns [String txt]
 @init	{StringBuilder sb = new StringBuilder();}
 @after	{$txt = sb.toString();}
-	: ( argN=ID '=' argV=test 
-	{
-	sb.append($argN.text + " := " + $argV.txt);
-	}
-	( ',' argN=ID '=' argV=test)*)? 
-	{
-	sb.append(", " + $argN.text + " := " + $argV.txt);
-	}
+	: ( argN=ID '=' argV=test { sb.append($argN.text + " := " + $argV.txt); } ( ',' argN=ID '=' argV=test)*)? { sb.append(", " + $argN.text + " := " + $argV.txt); }
 	;
 	
 alias returns [ String txt ]
@@ -135,21 +128,12 @@ alias returns [ String txt ]
 
 pointer	returns [ List<String> statements ]
 	: 'pointer' '.' (ts=SDT | ti=ID) n+=ID (',' n+=ID)*
-	{
-		$statements = new LinkedList<String>();
-		ListIterator<Token> nI = $n.listIterator();
-		
-		while(nI.hasNext()){
-			$statements.add(new String(nI.next().getText() + " :POINTER TO " + $ts.text + $ti.text));
-			
-		}
-	}	
 	;
-// for each ID, declare a variable named scope.ID giving type pointer to t
-// for each ID, print out twincat syntax for pointer
+
 enumeration returns [ String txt ]
+@after	{ System.out.println($txt); }
 	: 'enum' '.' en=ID '=' LCURLY enumerationElementList RCURLY
-	{ $txt = "TYPE " + $en.text + ":(" + $enumerationElementList.txt + "); END_TYPE"; System.out.println($txt); }
+	{ $txt = "TYPE " + $en.text + ":(" + $enumerationElementList.txt + "); END_TYPE"; }
 	;
 
 enumerationElementList returns [ String txt ]
@@ -226,9 +210,7 @@ arrayConstantExpression returns [ String txt ]
 literalsList returns [ String txt ]
 @init	{ StringBuilder sb = new StringBuilder(); }
 @after	{ $txt = sb.toString(); }
-	: a1=atom 
-	{ sb.append($a1.txt); }
-	( ',' aN=atom { sb.append(", " + $aN.txt); })*
+	: a1=atom { sb.append($a1.txt); } ( ',' aN=atom { sb.append(", " + $aN.txt); })*
 	;
 
 // "root" of TwinCAT grammar
@@ -272,23 +254,20 @@ smallStm returns [ List<String> statements ]
 // TODO: implement http://docs.python.org/release/2.6.4/reference/grammar.html
 exprStm returns [ String txt ]
 @after	{ System.out.println($txt); }
-	: t1=test
-	(
-	augAssign[$t1.text] t2=test { $txt = $t1.text + " " + $augAssign.txt + $t2.text; }
-	| ('=' t3=test) { $txt = $t1.text + " := " + $t3.txt; }
-	)
+	: t1=test augAssign t2=test { $txt = $t1.txt + " := " + $t1.txt + $augAssign.txt + $t2.txt; }
+	| t3=test '=' t4=test { $txt = $t3.txt + " := " + $t4.txt; }
 	;
-
-augAssign [ String pre ] returns [ String txt ]
-	: '+=' { $txt = ":= " + $pre + " + "; }
-	| '-=' { $txt = ":= " + $pre + " - "; }
-	| '*=' { $txt = ":= " + $pre + " * "; }
-	| '/=' { $txt = ":= " + $pre + " / "; }
-	| '%=' { $txt = ":= " + $pre + " MOD "; }
-	| '&=' { $txt = ":= " + $pre + " AND "; }
-	| '|=' { $txt = ":= " + $pre + " OR "; }
+	
+augAssign returns [ String txt ]
+	: '+=' { $txt = " + "; }
+	| '-=' { $txt = " - "; }
+	| '*=' { $txt = " * "; }
+	| '/=' { $txt = " / "; }
+	| '%=' { $txt = " MOD "; }
+	| '&=' { $txt = " AND "; }
+	| '|=' { $txt = " OR "; }
 	;
-
+	
 flowStm
 	: returnStm
 	| exitStm
@@ -379,7 +358,7 @@ compOperator returns [ String txt ]
 	| '>=' { $txt = ">="; }
 	| '<=' { $txt = "<="; }
 	| '<>' { $txt = "<>"; }
-	| '!=' { $txt = "<>"; }
+	| '!=' { $txt = new String("<>"); }
 	;
 	
 expr returns [ String txt ]
@@ -419,21 +398,28 @@ term returns [ String txt ]
 @after	{ $txt = sb.toString();	}
 	: f1=factor { sb.append($f1.txt); } (('*' { sb.append(" * "); } | '/' { sb.append(" / "); } | '%' { sb.append(" MOD "); }) fN=factor { sb.append($fN.txt); })*
 	;
-	
+		
 factor returns [ String txt ]
 @init	{ StringBuilder sb = new StringBuilder(); }
 @after	{ $txt = sb.toString();	}
 	: '(' expr ')' { sb.append("(" + $expr.txt + ")"); }
-	| ('+' { sb.append("+"); } | '-' { sb.append("-"); } ) fact=factor { sb.append($fact.txt); }
-	| power { sb.append($power.txt); }
+	| ('+' { sb.append("+"); } |'-' { sb.append("-"); })? power { sb.append($power.txt); }
 	;
 	
+
 power returns [ String txt ]
 @init	{ StringBuilder sb = new StringBuilder(); }
-@after	{ $txt = sb.toString();	}
-	: atp=atom '**' factor { sb.append("EXPT(" + $atp.txt + ", " + $factor.txt +")"); }
-	| at=atom { sb.append($at.txt); }
+@after	{ 
+	if(fac == null){
+		sb.append($atp.txt);
+	} else {
+		sb.append("EXPT(" + $atp.txt + ", " + $fac.txt + ")");
+	}
+	$txt = sb.toString();
+	}
+	: atp=atom ('**' fac=factor)?
 	;
+	
 atom returns [ String txt ]
 @init	{ StringBuilder sb = new StringBuilder(); }
 @after	{ $txt = sb.toString();	}
@@ -453,7 +439,7 @@ arrayModifierEl returns [ String txt ]
 trailer returns [ String txt ]
 @init	{ StringBuilder sb = new StringBuilder(); }
 @after	{ $txt = sb.toString();	}
-	: ('.' ID { sb.append("." + $ID.text);})+
+	: ('.' ID { sb.append("." + $ID.text); })+
 	;
 
 singleFileInput
@@ -464,10 +450,10 @@ singleFileInput
 // TODO: String initialization
 literal returns [ String txt ]
   : DECIMALL { $txt = $DECIMALL.text; }
-  | hexL { $txt = $hexL.txt; }
+  | HEXDIGITS { $txt = "16#" + $HEXDIGITS.text.substring(2); }
   | FLOATINGPOINTL { $txt = $FLOATINGPOINTL.text; }
-  | binaryL { $txt = $binaryL.txt; }
-  | octalL { $txt = $octalL.txt; }
+  | BINDIGITS { $txt = "2#" + $BINDIGITS.text.substring(2); }
+  | OCTDIGITS { $txt = "8#" + $OCTDIGITS.text.substring(2); }
   | timeL { $txt = $timeL.txt; }
   | todL { $txt = $todL.txt; }
   | dateL { $txt = $dateL.txt; }
@@ -477,32 +463,20 @@ literal returns [ String txt ]
   | stringL { $txt = $stringL.txt; }
   ;
 
-binaryL returns [ String txt ]
-	: 'b!' BINDIGITS { $txt = "2#" + $BINDIGITS.text; }
-	;
-
-fragment BINDIGITS : ('0'..'1')+ ;
-  
-hexL returns [ String txt ]
-	: 'h!' HEXDIGITS { $txt = "16#" + $HEXDIGITS.text; }
- 	;
-
 FLOATINGPOINTL
-	:    ('0'..'9')* '.' ('0'..'9')+ EXPONENT?
-	|    ('0'..'9')+ EXPONENT
+	: ('0'..'9')* '.' ('0'..'9')+ EXPONENT?
+	| ('0'..'9')+ EXPONENT
 	;
 
-fragment EXPONENT : ('e'|'E') ('+'|'-')? ('0'..'9')+ ; 
+HEXDIGITS : 'h!' ('0'..'9'|'a'..'f'|'A'..'F')+ ;
 
-fragment HEXDIGITS : ('0'..'9'|'a'..'f'|'A'..'F')+ ;
-
-fragment OCTDIGITS : ('0'..'7')+ ;
-	
 DECIMALL : ('0' | '1'..'9' '0'..'9'*) ;
 
-octalL returns [ String txt ]
-	: 'o!' OCTDIGITS { $txt = "8#" + $OCTDIGITS.text; }
-	;
+OCTDIGITS : 'o!' ('0'..'7')+ ;
+
+BINDIGITS : 'b!' ('0'..'1')+ ;
+
+fragment EXPONENT : ('e'|'E') ('+'|'-')? ('0'..'9')+ ; 
 
 // TODO: Check & convert in twincat
 fragment EscapeSequence : '\\' ('b'|'t'|'n'|'f'|'r'|'\"'|'\''|'\\') | OctalEscape ;
