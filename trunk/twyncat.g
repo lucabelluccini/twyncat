@@ -4,6 +4,7 @@ grammar twyncat;
 // TODO: Structure
 // TODO: Variables initialization
 // TODO: Type checking
+// TODO: Pointer dereference (^)
 
 options {
 	output = AST;
@@ -220,9 +221,12 @@ structureElement returns [ List<String> statements ]
 // TODO: Check types SDT or ID exist?
 // TODO: Check SDT or ID same of varListElem
 // Bring down type
-definition returns [ List<String> statements ]
+definition returns [ List<String> statements, List<String> inVars, List<String> outVars, List<String> inoutVars, List<String> Vars]
 @after	{ $statements = $vl.statements; }
 	: (( 'in' | 'out' | 'inout' ) DOT )? (( 'persistent' | 'retain' | 'constant') DOT )? (sdt | ID) vl=varList
+	{
+	
+	}
 	;
 
 globaldefinition returns [ List<String> statements ]
@@ -243,7 +247,7 @@ fragment varListElem returns [ String txt ]
 @after	{ $txt = (initialized? sb.toString() : null) + ";"; }
 	: ID { sb.append($ID.text); } (trailer { sb.append($trailer.txt); })?
 	( arrayModifier { sb.append($arrayModifier.txt); } ('=' ace=arrayConstantExpression { sb.append(" := " + $ace.txt); })?  
-	| '=' t=test { sb.append(" := " + $t.txt); initialized = true; } )?
+	| ( '[' strl=DECIMALL ']' { sb.append("( " + $strl.text + " )"); } )? '=' t=test { sb.append(($strl == null?"":$strl.text) + " := " + $t.txt); initialized = true; } )?
 	;
 
 arrayModifier returns [ String txt ]
@@ -528,13 +532,7 @@ trailer returns [ String txt ]
 @after	{ $txt = sb.toString();	}
 	: ('.' ID { sb.append("." + $ID.text); })+
 	;
-/*
-singleFileInput
-  : (NEWLINE | statement)* EOF
-  ;
-*/
-// === Literals ===
-// TODO: String initialization
+
 literal returns [ String txt ]
   : DECIMALL { $txt = $DECIMALL.text; }
   | HEXDIGITS { $txt = "16#" + $HEXDIGITS.text.substring(2); }
