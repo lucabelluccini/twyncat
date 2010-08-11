@@ -302,7 +302,7 @@ On the top of each one of these blocks there's the variable section. They can be
   * `VAR_INPUT [...] END_VAR`, contains all variables that will be shown as Input lines in FBD
   * `VAR_OUTPUT [...] END_VAR`, contains all variables that will be shown as Output lines in FBD
   * `VAR_IN_OUT [...] END_VAR`, contains all variables that will be shown as Input-Output lines in FBD
-  * `VAR [...] END_VAR`, contains all variables that will be shown as Input lines in FBD
+  * `VAR [...] END_VAR`, contains all variables that will be shown as Local variables, so cannot be accessed in FBD
 
 Global variables, global network variables (VAR_GLOBAL), and variable configurations (VAR_CONFIG) must be defined in separate objects.
 Variable sections can have a modifier such as RETAIN, PERSISTENT, CONSTANT.
