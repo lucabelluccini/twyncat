@@ -294,8 +294,8 @@ TOF				FB: off-delay timer
 == Program Blocks ==
 
 There are 3 kinds of blocks:
-  * `FUNCTION_BLOCK FunctionBlockName`, represents a function which returns no data
-  * `FUNCTION FunctionName : ReturnDataType`, represents a function which returns a value
+  * `FUNCTION_BLOCK FunctionBlockName`, represents a function which returns no data; a call to a FUNCTION_BLOCK needs explicit name of arguments (e.g. `FunctionBlockName(arg1:=1,arg2:=2)`
+  * `FUNCTION FunctionName : ReturnDataType`, represents a function which returns a value;  in a call to a FUNCTION, name of arguments are implicit (e.g. `Function(1,2)`)
   * `PROGRAM ProgramName`, represents the main program
 
 On the top of each one of these blocks there's the variable section. They can be:
