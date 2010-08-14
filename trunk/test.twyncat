@@ -8,7 +8,8 @@ func myfunct:
 	in.int arrayZ[1:10][2:30][3:20]
 	in.bool par1, par2, par3
 	out.bool result
-	myfunct(a=1,b=2,c=3)
+	myFB(a=1,b=2,c=3)
+	myF(1,2,3)
 	a += b - 1
 	result = (par1+par2+par3*4-10)/(par1+par2+par3*4+10)
 	result = (par1+par2+par3*4-10)/10
@@ -26,6 +27,11 @@ func functionThatReturnsBool returns bool:
 	anotherOutput = 10.4
 
 prog test:
+	in.int par6, par7 = 11, par9 = 66, stringa = 1001
+	out.int array[1:10]= [1,2,3,4,5,6,7,8,9,10], array2[1:4] = [1,2,3,4]
+	in.int arrayZ[1:10][2:30][3:20]
+	in.bool par1, par2, par3
+	out.bool result
 	out.myType myVar = '3', myVar2 = 3, myVar3[1:10] = [1,2,3,4,5,6,7,8,9,10]
 	pippo = 99
 	pluto = "Stringa"
@@ -33,6 +39,8 @@ prog test:
 	paperino = 'c'
 	in.bool flag
 	if test:
+		bool flagITA
+		bool flagROM
 		myVar = True
 	else:
 		myVar = False

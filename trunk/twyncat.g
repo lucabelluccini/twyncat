@@ -5,6 +5,7 @@ grammar twyncat;
 // TODO: Variables initialization
 // TODO: Type checking
 // TODO: Pointer dereference (^)
+// TODO: Retain, Persistent, Constant
 
 options {
 	output = AST;
@@ -19,6 +20,29 @@ tokens {
 @parser::header {
 import java.util.ListIterator;
 import java.util.LinkedList;
+}
+
+@parser::members {
+
+public class VariablesBundle {
+	public List<String> inVar;
+	public List<String> outVar;
+	public List<String> inoutVar;
+	public List<String> locVar;
+	public List<String> inVarR;
+	public List<String> outVarR;
+	public List<String> inoutVarR;
+	public List<String> locVarR;
+	public List<String> inVarC;
+	public List<String> outVarC;
+	public List<String> inoutVarC;
+	public List<String> locVarC;
+	public List<String> inVarP;
+	public List<String> outVarP;
+	public List<String> inoutVarP;
+	public List<String> locVarP;
+}
+
 }
 
 @lexer::header {
@@ -110,39 +134,85 @@ booleanL returns [ String txt ]
 
 program returns [ List<String> statements ]
 @init	{ $statements = new LinkedList<String>(); }
-	: 'prog' ID ':' codeBlock
-	{
-	$statements.add("PROGRAM " + $ID.text);
-	// TODO VARS
-	$statements.addAll($codeBlock.statements);
+@after	{
+	$statements.add("(* ==== PROGRAM " + $pn.text + " ==== *)");
+	$statements.add("PROGRAM " + $pn.text);
+	if($cb.locVars.size() > 0) {
+		$statements.add("VAR");
+		$statements.addAll($cb.locVars);
+		$statements.add("END_VAR");
 	}
+	if($cb.inVars.size() > 0) {
+		$statements.add("VAR_INPUT");
+		$statements.addAll($cb.inVars);
+		$statements.add("END_VAR");
+	}
+	if($cb.outVars.size() > 0) {
+		$statements.add("VAR_OUTPUT");
+		$statements.addAll($cb.outVars);
+		$statements.add("END_VAR");
+	}
+	if($cb.inoutVars.size() > 0) {
+		$statements.add("VAR_IN_OUT");
+		$statements.addAll($cb.inoutVars);
+		$statements.add("END_VAR");
+	}
+	$statements.addAll($cb.statements);
+	}
+	: 'prog' pn=ID ':' cb=codeBlock
 	;
 
 function returns [ List<String> statements ]
 @init	{ $statements = new LinkedList<String>(); Boolean returnsV = false; }
-	: 'func' funcN=ID ('returns' ( rts=sdt | rtu=ID ) { returnsV = true; })? ':' codeBlock
-	{
+@after	{
 	if(returnsV){
+		$statements.add("(* ==== FUNCTION " + $funcN.text + " ==== *)");
 		$statements.add("FUNCTION " + $funcN.text + " : " + (rts == null?"":$rts.txt) + ($rtu == null?"":$rtu.text));
 	} else {
+		$statements.add("(* ==== FUNCTION_BLOCK " + $funcN.text + " ==== *)");
 		$statements.add("FUNCTION_BLOCK " + $funcN.text);
 	}
-	// TODO VARS
-	$statements.addAll($codeBlock.statements);
-		
+	if($cb.locVars.size() > 0) {
+		$statements.add("VAR");
+		$statements.addAll($cb.locVars);
+		$statements.add("END_VAR");
 	}
+	if($cb.inVars.size() > 0) {
+		$statements.add("VAR_INPUT");
+		$statements.addAll($cb.inVars);
+		$statements.add("END_VAR");
+	}
+	if($cb.outVars.size() > 0) {
+		$statements.add("VAR_OUTPUT");
+		$statements.addAll($cb.outVars);
+		$statements.add("END_VAR");
+	}
+	if($cb.inoutVars.size() > 0) {
+		$statements.add("VAR_IN_OUT");
+		$statements.addAll($cb.inoutVars);
+		$statements.add("END_VAR");
+	}
+	$statements.addAll($cb.statements);
+	}
+	: 'func' funcN=ID ('returns' ( rts=sdt | rtu=ID ) { returnsV = true; })? ':' cb=codeBlock
 	;
 
 callFunc returns [ String txt ]
-	: ID trail=trailer? '(' callFuncArgs ')'
-	{ $txt = $ID.text + ($trail.txt == null?"":$trail.txt) + "(" + $callFuncArgs.txt + ")" + ";"; }
+	: ID trail=trailer? '(' ( cfb=callFuncBlockArgs | cf=callFuncArgs )? ')'
+	{ $txt = $ID.text + ($trail.txt == null?"":$trail.txt) + "(" + (cfb == null?"":$cfb.txt) + (cf == null?"":$cf.txt) + ")" + ";"; }
 	;
 
 // TODO: Check if passed arguments are of same type of declared and exists
-callFuncArgs returns [String txt]
-@init	{StringBuilder sb = new StringBuilder();}
+callFuncBlockArgs returns [String txt]
+@init	{ StringBuilder sb = new StringBuilder(); }
 @after	{ $txt = sb.toString(); }
-	: ( argN=ID '=' argV=test { sb.append($argN.text + " := " + $argV.txt); } ( ',' argN=ID '=' argV=test)*)? { sb.append(", " + $argN.text + " := " + $argV.txt); }
+	: ( argN1=ID trail1=trailer? '=' argV1=test { sb.append($argN1.text + ($trail1.txt == null?"":$trail1.txt) + " := " + $argV1.txt); } ( ',' argNN=ID trailN=trailer? '=' argVN=test { sb.append(", " + $argNN.text + ($trailN.txt == null?"":$trailN.txt) + " := " + $argVN.txt); } )*)? 
+	;
+	
+callFuncArgs returns [String txt]
+@init	{ StringBuilder sb = new StringBuilder(); }
+@after	{ $txt = sb.toString(); }
+	: ( argV1=test { sb.append($argV1.txt); } ( ',' argVN=test { sb.append(", " + $argVN.txt); } )*)? 
 	;
 
 // TODO: Add alias to types
@@ -212,42 +282,57 @@ structure returns [ List<String> statements ]
 	
 structureElement returns [ List<String> statements ]
 @init	{ $statements = new LinkedList<String>(); }
-	: ((sdt | ID) varList NEWLINE)+
+	: ((sT=sdt | uT=ID) varList[ (sT == null?"":$sT.txt) + ($uT.text == null?"":$uT.text) + "" ] NEWLINE)+
 	{
-	$statements.add("TODO");
+	$statements.addAll($varList.statements);
 	}
 	;
 
 // TODO: Check types SDT or ID exist?
 // TODO: Check SDT or ID same of varListElem
 // Bring down type
-definition returns [ List<String> statements, List<String> inVars, List<String> outVars, List<String> inoutVars, List<String> Vars]
-@after	{ $statements = $vl.statements; }
-	: (( 'in' | 'out' | 'inout' ) DOT )? (( 'persistent' | 'retain' | 'constant') DOT )? (sdt | ID) vl=varList
-	{
-	
+definition returns [ List<String> inVars, List<String> outVars, List<String> inoutVars, List<String> locVars ]
+@init	{ List<String> definitions; }
+@after	{
+	definitions = $vlist.statements;
+	if(dp != null){
+		switch($dp.pID){
+			case 1: $inVars = definitions; break;
+			case 0: $outVars = definitions; break;
+			case 2: $inoutVars = definitions; break;
+			default:
+		}
+	} else {
+		$locVars = definitions;
 	}
+	}
+	: dp=defPurpose? dm=defModifier? (sT=sdt | uT=ID) vlist=varList[ (sT == null?"":$sT.txt) + ($uT.text == null?"":$uT.text) + "" ]
 	;
 
+defPurpose returns [ int pID ]
+	: ( 'in' { $pID = 1; } | 'out' { $pID = 0; } | 'inout' { $pID = 2; } ) DOT 
+	;
+
+defModifier returns [ String txt ]
+	: ( 'persistent' | 'retain' | 'constant') DOT 
+	;
+	
 globaldefinition returns [ List<String> statements ]
-@after	{ $statements = $vl.statements; }
-	: (( 'config' | 'global' ) DOT )? (( 'persistent' | 'retain' | 'constant') DOT )? (sdt | ID) vl=varList
+@after	{ $statements = $vlist.statements; }
+	: (( 'config' | 'global' ) DOT )? (( 'persistent' | 'retain' | 'constant') DOT )? (sT=sdt | uT=ID) vlist=varList[ (sT == null?"":$sT.txt) + ($uT.text == null?"":$uT.text) + "" ]
 	;
 
-varList returns [ List<String> statements ]
+varList [ String type ] returns [ List<String> statements ]
 @init	{ $statements = new LinkedList<String>(); }
-	: vle1=varListElem { if($vle1.txt != null) { $statements.add($vle1.txt); } } (',' vleN=varListElem { if($vleN.txt != null) { $statements.add($vleN.txt); } })*
+	: vle1=varListElem[ $type ] { if($vle1.txt != null) { $statements.add($vle1.txt); } } (',' vleN=varListElem[ $type ] { if($vleN.txt != null) { $statements.add($vleN.txt); } })*
 	;
 
-// Only initialized variables (not arrays) will be passed to varList
-// Allow arrayModifier exist with arrayConstantExpression only
-// TODO: Pass arrayModifier
-fragment varListElem returns [ String txt ]
-@init	{ StringBuilder sb = new StringBuilder(); Boolean initialized = false; }
-@after	{ $txt = (initialized? sb.toString() : null) + ";"; }
+fragment varListElem [ String vType ] returns [ String txt ]
+@init	{ StringBuilder sb = new StringBuilder(); }
+@after	{ $txt = sb.toString() + ";"; }
 	: ID { sb.append($ID.text); } (trailer { sb.append($trailer.txt); })?
-	( arrayModifier { sb.append($arrayModifier.txt); } ('=' ace=arrayConstantExpression { sb.append(" := " + $ace.txt); })?  
-	| ( '[' strl=DECIMALL ']' { sb.append("( " + $strl.text + " )"); } )? '=' t=test { sb.append(($strl == null?"":$strl.text) + " := " + $t.txt); initialized = true; } )?
+	( { sb.append(" ARRAY"); } arrayModifier { sb.append($arrayModifier.txt); sb.append(" OF " + $vType); } ('=' ace=arrayConstantExpression { sb.append(" := " + $ace.txt); })?  
+	| ( '[' strl=DECIMALL ']' )? ('=' t=test )? { sb.append(" : " + $vType + ($strl == null?"":"("+$strl.text+")") + (t == null?"":" := " + $t.txt)); })?
 	;
 
 arrayModifier returns [ String txt ]
@@ -292,8 +377,15 @@ file	returns [ List<String> statements ]
 	ps=program { $statements.addAll($ps.statements); } EOF
 	;
 
-statement returns [ List<String> statements ]
-	: simpleStm { $statements = $simpleStm.statements; }
+statement returns [ List<String> statements, List<String> inVars, List<String> outVars, List<String> inoutVars, List<String> locVars ]
+	: simpleStm
+	{
+	$statements = $simpleStm.statements; 
+	$inVars = $simpleStm.inVars;
+	$outVars = $simpleStm.outVars;
+	$inoutVars = $simpleStm.inoutVars;
+	$locVars = $simpleStm.locVars;
+	}
 	| compoundStm { $statements = $compoundStm.statements; }
 	;
 
@@ -310,17 +402,32 @@ smallGlobalStm returns [ List<String> statements ]
 	| structure //-> {$structure.st}
 	;
 
-simpleStm returns [ List<String> statements ]
-	: smallStm (SEMI)? NEWLINE { $statements = $smallStm.statements; }
+simpleStm returns [ List<String> statements, List<String> inVars, List<String> outVars, List<String> inoutVars, List<String> locVars ]
+	: smallStm (SEMI)? NEWLINE
+	{
+	$statements = $smallStm.statements;
+	$inVars = $smallStm.inVars;
+	$outVars = $smallStm.outVars;
+	$inoutVars = $smallStm.inoutVars;
+	$locVars = $smallStm.locVars;
+	}
 	;
 
 // TODO: check if statements is null !
-smallStm returns [ List<String> statements ]
+// TODO: pointer
+smallStm returns [ List<String> statements, List<String> inVars, List<String> outVars, List<String> inoutVars, List<String> locVars ]
 @init	{ $statements = new LinkedList<String>(); }
 	: exprStm { $statements.add($exprStm.txt); }
 	| flowStm { $statements.add($flowStm.txt); }
 	| repeatUntilStm { $statements.addAll($repeatUntilStm.statements); }
-	| definition { $statements.addAll($definition.statements); }
+	| pointer
+	| d=definition
+	{
+	$inVars = $d.inVars;
+	$outVars = $d.outVars;
+	$inoutVars = $d.inoutVars;
+	$locVars = $d.locVars;
+	}
 	;
 
 exprStm returns [ String txt ]
@@ -409,10 +516,33 @@ repeatUntilStm returns [ List<String> statements ]
 	}
 	;
 
-codeBlock returns [ List<String> statements ]
-@init	{ $statements = new LinkedList<String>(); }
-	: stm=simpleStm { if($stm.statements != null) { $statements.addAll($stm.statements); } }
-	| NEWLINE INDENT ( stms=statement { if($stms.statements != null) { $statements.addAll($stms.statements); } })+ DEDENT 
+codeBlock returns [ VariablesBundle vb, List<String> statements, List<String> inVars, List<String> outVars, List<String> inoutVars, List<String> locVars  ]
+@init	{
+	$statements = new LinkedList<String>();
+	$inVars = new LinkedList<String>();
+	$outVars = new LinkedList<String>();
+	$inoutVars = new LinkedList<String>();
+	$locVars = new LinkedList<String>();
+	}
+	: stm=simpleStm
+	{
+	if($stm.statements != null) {
+		$statements.addAll($stm.statements);
+	}
+	if($stm.inVars != null) { $inVars.addAll($stm.inVars); }
+	if($stm.outVars != null) { $outVars.addAll($stm.outVars); }
+	if($stm.inoutVars != null) { $inoutVars.addAll($stm.inoutVars); }
+	if($stm.locVars != null) { $locVars.addAll($stm.locVars); }
+	}
+	| NEWLINE INDENT ( stms=statement {
+	if($stms.statements != null) { $statements.addAll($stms.statements); }
+		{
+	if($stms.inVars != null) { $inVars.addAll($stms.inVars); }
+	if($stms.outVars != null) { $outVars.addAll($stms.outVars); }
+	if($stms.inoutVars != null) { $inoutVars.addAll($stms.inoutVars); }
+	if($stms.locVars != null) { $locVars.addAll($stms.locVars); }
+	}
+	})+ DEDENT 
 	;
 
 test returns [ String txt]
