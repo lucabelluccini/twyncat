@@ -41,6 +41,45 @@ public class VariablesBundle {
 	public List<String> outVarP;
 	public List<String> inoutVarP;
 	public List<String> locVarP;
+	
+	public VariablesBundle () {
+		inVar = new LinkedList<String>();
+		outVar = new LinkedList<String>();
+		inoutVar = new LinkedList<String>();
+		locVar = new LinkedList<String>();
+		inVarR = new LinkedList<String>();
+		outVarR = new LinkedList<String>();
+		inoutVarR = new LinkedList<String>();
+		locVarR = new LinkedList<String>();
+		inVarC = new LinkedList<String>();
+		outVarC = new LinkedList<String>();
+		inoutVarC = new LinkedList<String>();
+		locVarC = new LinkedList<String>();
+		inVarP = new LinkedList<String>();
+		outVarP = new LinkedList<String>();
+		inoutVarP = new LinkedList<String>();
+		locVarP = new LinkedList<String>();
+	}
+	
+	public void addAll(VariablesBundle vb) {
+		if(vb == null) return;
+		if(vb.inVar != null) { inVar.addAll(vb.inVar); }
+		if(vb.outVar != null) { outVar.addAll(vb.outVar); }
+		if(vb.inoutVar != null) { inoutVar.addAll(vb.inoutVar); }
+		if(vb.locVar != null) { locVar.addAll(vb.locVar); }
+		if(vb.inVarR != null) { inVarR.addAll(vb.inVarR); }
+		if(vb.outVarR != null) { outVarR.addAll(vb.outVarR); }
+		if(vb.inoutVarR != null) { inoutVarR.addAll(vb.inoutVarR); }
+		if(vb.locVarR != null) { locVarR.addAll(vb.locVarR); }
+		if(vb.inVarC != null) { inVarC.addAll(vb.inVarC); }
+		if(vb.outVarC != null) { outVarC.addAll(vb.outVarC); }
+		if(vb.inoutVarC != null) { inoutVarC.addAll(vb.inoutVarC); }
+		if(vb.locVarC != null) { locVarC.addAll(vb.locVarC); }
+		if(vb.inVarP != null) { inVarP.addAll(vb.inVarP); }
+		if(vb.outVarP != null) { outVarP.addAll(vb.outVarP); }
+		if(vb.inoutVarP != null) { inoutVarP.addAll(vb.inoutVarP); }
+		if(vb.locVarP != null) { locVarP.addAll(vb.locVarP); }
+	}
 }
 
 }
@@ -137,26 +176,22 @@ program returns [ List<String> statements ]
 @after	{
 	$statements.add("(* ==== PROGRAM " + $pn.text + " ==== *)");
 	$statements.add("PROGRAM " + $pn.text);
-	if($cb.locVars.size() > 0) {
-		$statements.add("VAR");
-		$statements.addAll($cb.locVars);
-		$statements.add("END_VAR");
-	}
-	if($cb.inVars.size() > 0) {
-		$statements.add("VAR_INPUT");
-		$statements.addAll($cb.inVars);
-		$statements.add("END_VAR");
-	}
-	if($cb.outVars.size() > 0) {
-		$statements.add("VAR_OUTPUT");
-		$statements.addAll($cb.outVars);
-		$statements.add("END_VAR");
-	}
-	if($cb.inoutVars.size() > 0) {
-		$statements.add("VAR_IN_OUT");
-		$statements.addAll($cb.inoutVars);
-		$statements.add("END_VAR");
-	}
+	if($cb.vbund.locVar.size() > 0) { $statements.add("VAR"); $statements.addAll($cb.vbund.locVar); $statements.add("END_VAR"); }
+	if($cb.vbund.inVar.size() > 0) { $statements.add("VAR_INPUT");	$statements.addAll($cb.vbund.inVar); $statements.add("END_VAR"); }
+	if($cb.vbund.outVar.size() > 0) { $statements.add("VAR_OUTPUT"); $statements.addAll($cb.vbund.outVar); $statements.add("END_VAR"); }
+	if($cb.vbund.inoutVar.size() > 0) { $statements.add("VAR_IN_OUT"); $statements.addAll($cb.vbund.inoutVar); $statements.add("END_VAR"); }
+	if($cb.vbund.locVarR.size() > 0) { $statements.add("VAR RETAIN"); $statements.addAll($cb.vbund.locVarR); $statements.add("END_VAR"); }
+	if($cb.vbund.inVarR.size() > 0) { $statements.add("VAR_INPUT RETAIN");	$statements.addAll($cb.vbund.inVarR); $statements.add("END_VAR"); }
+	if($cb.vbund.outVarR.size() > 0) { $statements.add("VAR_OUTPUT RETAIN"); $statements.addAll($cb.vbund.outVarR); $statements.add("END_VAR"); }
+	if($cb.vbund.inoutVarR.size() > 0) { $statements.add("VAR_IN_OUT RETAIN"); $statements.addAll($cb.vbund.inoutVarR); $statements.add("END_VAR"); }
+	if($cb.vbund.locVarC.size() > 0) { $statements.add("VAR CONSTANT"); $statements.addAll($cb.vbund.locVarC); $statements.add("END_VAR"); }
+	if($cb.vbund.inVarC.size() > 0) { $statements.add("VAR_INPUT CONSTANT"); $statements.addAll($cb.vbund.inVarC); $statements.add("END_VAR"); }
+	if($cb.vbund.outVarC.size() > 0) { $statements.add("VAR_OUTPUT CONSTANT"); $statements.addAll($cb.vbund.outVarC); $statements.add("END_VAR"); }
+	if($cb.vbund.inoutVarC.size() > 0) { $statements.add("VAR_IN_OUT CONSTANT"); $statements.addAll($cb.vbund.inoutVarC); $statements.add("END_VAR"); }
+	if($cb.vbund.locVarP.size() > 0) { $statements.add("VAR PERSISTENT"); $statements.addAll($cb.vbund.locVarP); $statements.add("END_VAR"); }
+	if($cb.vbund.inVarP.size() > 0) { $statements.add("VAR_INPUT PERSISTENT"); $statements.addAll($cb.vbund.inVarP); $statements.add("END_VAR"); }
+	if($cb.vbund.outVarP.size() > 0) { $statements.add("VAR_OUTPUT PERSISTENT"); $statements.addAll($cb.vbund.outVarP); $statements.add("END_VAR"); }
+	if($cb.vbund.inoutVarP.size() > 0) { $statements.add("VAR_IN_OUT PERSISTENT"); $statements.addAll($cb.vbund.inoutVarP); $statements.add("END_VAR"); }
 	$statements.addAll($cb.statements);
 	}
 	: 'prog' pn=ID ':' cb=codeBlock
@@ -172,26 +207,22 @@ function returns [ List<String> statements ]
 		$statements.add("(* ==== FUNCTION_BLOCK " + $funcN.text + " ==== *)");
 		$statements.add("FUNCTION_BLOCK " + $funcN.text);
 	}
-	if($cb.locVars.size() > 0) {
-		$statements.add("VAR");
-		$statements.addAll($cb.locVars);
-		$statements.add("END_VAR");
-	}
-	if($cb.inVars.size() > 0) {
-		$statements.add("VAR_INPUT");
-		$statements.addAll($cb.inVars);
-		$statements.add("END_VAR");
-	}
-	if($cb.outVars.size() > 0) {
-		$statements.add("VAR_OUTPUT");
-		$statements.addAll($cb.outVars);
-		$statements.add("END_VAR");
-	}
-	if($cb.inoutVars.size() > 0) {
-		$statements.add("VAR_IN_OUT");
-		$statements.addAll($cb.inoutVars);
-		$statements.add("END_VAR");
-	}
+	if($cb.vbund.locVar.size() > 0) { $statements.add("VAR"); $statements.addAll($cb.vbund.locVar); $statements.add("END_VAR"); }
+	if($cb.vbund.inVar.size() > 0) { $statements.add("VAR_INPUT");	$statements.addAll($cb.vbund.inVar); $statements.add("END_VAR"); }
+	if($cb.vbund.outVar.size() > 0) { $statements.add("VAR_OUTPUT"); $statements.addAll($cb.vbund.outVar); $statements.add("END_VAR"); }
+	if($cb.vbund.inoutVar.size() > 0) { $statements.add("VAR_IN_OUT"); $statements.addAll($cb.vbund.inoutVar); $statements.add("END_VAR"); }
+	if($cb.vbund.locVarR.size() > 0) { $statements.add("VAR RETAIN"); $statements.addAll($cb.vbund.locVarR); $statements.add("END_VAR"); }
+	if($cb.vbund.inVarR.size() > 0) { $statements.add("VAR_INPUT RETAIN");	$statements.addAll($cb.vbund.inVarR); $statements.add("END_VAR"); }
+	if($cb.vbund.outVarR.size() > 0) { $statements.add("VAR_OUTPUT RETAIN"); $statements.addAll($cb.vbund.outVarR); $statements.add("END_VAR"); }
+	if($cb.vbund.inoutVarR.size() > 0) { $statements.add("VAR_IN_OUT RETAIN"); $statements.addAll($cb.vbund.inoutVarR); $statements.add("END_VAR"); }
+	if($cb.vbund.locVarC.size() > 0) { $statements.add("VAR CONSTANT"); $statements.addAll($cb.vbund.locVarC); $statements.add("END_VAR"); }
+	if($cb.vbund.inVarC.size() > 0) { $statements.add("VAR_INPUT CONSTANT"); $statements.addAll($cb.vbund.inVarC); $statements.add("END_VAR"); }
+	if($cb.vbund.outVarC.size() > 0) { $statements.add("VAR_OUTPUT CONSTANT"); $statements.addAll($cb.vbund.outVarC); $statements.add("END_VAR"); }
+	if($cb.vbund.inoutVarC.size() > 0) { $statements.add("VAR_IN_OUT CONSTANT"); $statements.addAll($cb.vbund.inoutVarC); $statements.add("END_VAR"); }
+	if($cb.vbund.locVarP.size() > 0) { $statements.add("VAR PERSISTENT"); $statements.addAll($cb.vbund.locVarP); $statements.add("END_VAR"); }
+	if($cb.vbund.inVarP.size() > 0) { $statements.add("VAR_INPUT PERSISTENT"); $statements.addAll($cb.vbund.inVarP); $statements.add("END_VAR"); }
+	if($cb.vbund.outVarP.size() > 0) { $statements.add("VAR_OUTPUT PERSISTENT"); $statements.addAll($cb.vbund.outVarP); $statements.add("END_VAR"); }
+	if($cb.vbund.inoutVarP.size() > 0) { $statements.add("VAR_IN_OUT PERSISTENT"); $statements.addAll($cb.vbund.inoutVarP); $statements.add("END_VAR"); }
 	$statements.addAll($cb.statements);
 	}
 	: 'func' funcN=ID ('returns' ( rts=sdt | rtu=ID ) { returnsV = true; })? ':' cb=codeBlock
@@ -288,22 +319,52 @@ structureElement returns [ List<String> statements ]
 	}
 	;
 
-// TODO: Check types SDT or ID exist?
-// TODO: Check SDT or ID same of varListElem
-// Bring down type
-definition returns [ List<String> inVars, List<String> outVars, List<String> inoutVars, List<String> locVars ]
-@init	{ List<String> definitions; }
+// OUT = 0; IN = 1; INOUT = 2; LOC= 3;
+definition returns [ VariablesBundle vbund ]
+@init	{ List<String> definitions; $vbund = new VariablesBundle(); }
 @after	{
 	definitions = $vlist.statements;
-	if(dp != null){
-		switch($dp.pID){
-			case 1: $inVars = definitions; break;
-			case 0: $outVars = definitions; break;
-			case 2: $inoutVars = definitions; break;
-			default:
-		}
-	} else {
-		$locVars = definitions;
+	int purpose = 3, modifier = 0;
+	if(dp != null) { purpose = $dp.pID; }
+	if(dm != null) { modifier = $dm.mID; }
+	switch(purpose){
+		case 0: // Output
+			switch(modifier) {
+				case 0: $vbund.outVar = definitions; break;
+				case 1: $vbund.outVarR = definitions; break;
+				case 2: $vbund.outVarP = definitions; break;
+				case 3: $vbund.outVarC = definitions; break;
+				default: break;
+			}
+			break;
+		case 1: // Input
+			switch(modifier) {
+				case 0: $vbund.inVar = definitions; break;
+				case 1: $vbund.inVarR = definitions; break;
+				case 2: $vbund.inVarP = definitions; break;
+				case 3: $vbund.inVarC = definitions; break;
+				default: break;
+			}
+			break;
+		case 2: // Input-Output
+			switch(modifier) {
+				case 0: $vbund.inoutVar = definitions; break;
+				case 1: $vbund.inoutVarR = definitions; break;
+				case 2: $vbund.inoutVarP = definitions; break;
+				case 3: $vbund.inoutVarC = definitions; break;
+				default: break;
+			}
+			break;
+		case 3: // Local
+			switch(modifier) {
+				case 0: $vbund.locVar = definitions; break;
+				case 1: $vbund.locVarR = definitions; break;
+				case 2: $vbund.locVarP = definitions; break;
+				case 3: $vbund.locVarC = definitions; break;
+				default: break;
+			}
+			break;
+		default: break;
 	}
 	}
 	: dp=defPurpose? dm=defModifier? (sT=sdt | uT=ID) vlist=varList[ (sT == null?"":$sT.txt) + ($uT.text == null?"":$uT.text) + "" ]
@@ -313,8 +374,8 @@ defPurpose returns [ int pID ]
 	: ( 'in' { $pID = 1; } | 'out' { $pID = 0; } | 'inout' { $pID = 2; } ) DOT 
 	;
 
-defModifier returns [ String txt ]
-	: ( 'persistent' | 'retain' | 'constant') DOT 
+defModifier returns [ int mID ]
+	: ( 'persistent' { $mID = 2; } | 'retain' { $mID = 1; } | 'constant' { $mID = 3; } ) DOT 
 	;
 	
 globaldefinition returns [ List<String> statements ]
@@ -377,16 +438,9 @@ file	returns [ List<String> statements ]
 	ps=program { $statements.addAll($ps.statements); } EOF
 	;
 
-statement returns [ List<String> statements, List<String> inVars, List<String> outVars, List<String> inoutVars, List<String> locVars ]
-	: simpleStm
-	{
-	$statements = $simpleStm.statements; 
-	$inVars = $simpleStm.inVars;
-	$outVars = $simpleStm.outVars;
-	$inoutVars = $simpleStm.inoutVars;
-	$locVars = $simpleStm.locVars;
-	}
-	| compoundStm { $statements = $compoundStm.statements; }
+statement returns [ List<String> statements, VariablesBundle vbund ]
+	: simpleStm { $statements = $simpleStm.statements; $vbund = $simpleStm.vbund; }
+	| compoundStm { $statements = $compoundStm.statements; $vbund = $compoundStm.vbund; }
 	;
 
 globalStm returns [ List<String> statements ]
@@ -402,32 +456,19 @@ smallGlobalStm returns [ List<String> statements ]
 	| structure //-> {$structure.st}
 	;
 
-simpleStm returns [ List<String> statements, List<String> inVars, List<String> outVars, List<String> inoutVars, List<String> locVars ]
-	: smallStm (SEMI)? NEWLINE
-	{
-	$statements = $smallStm.statements;
-	$inVars = $smallStm.inVars;
-	$outVars = $smallStm.outVars;
-	$inoutVars = $smallStm.inoutVars;
-	$locVars = $smallStm.locVars;
-	}
+simpleStm returns [ List<String> statements, VariablesBundle vbund ]
+	: smallStm (SEMI)? NEWLINE { $statements = $smallStm.statements; $vbund = $smallStm.vbund; }
 	;
 
 // TODO: check if statements is null !
 // TODO: pointer
-smallStm returns [ List<String> statements, List<String> inVars, List<String> outVars, List<String> inoutVars, List<String> locVars ]
+smallStm returns [ List<String> statements, VariablesBundle vbund ]
 @init	{ $statements = new LinkedList<String>(); }
 	: exprStm { $statements.add($exprStm.txt); }
 	| flowStm { $statements.add($flowStm.txt); }
-	| repeatUntilStm { $statements.addAll($repeatUntilStm.statements); }
+	| repeatUntilStm { $statements.addAll($repeatUntilStm.statements); $vbund = $repeatUntilStm.vbund; }
 	| pointer
-	| d=definition
-	{
-	$inVars = $d.inVars;
-	$outVars = $d.outVars;
-	$inoutVars = $d.inoutVars;
-	$locVars = $d.locVars;
-	}
+	| d=definition { $vbund = $d.vbund; }
 	;
 
 exprStm returns [ String txt ]
@@ -451,98 +492,75 @@ flowStm returns [ String txt ]
 	| callFunc { $txt = $callFunc.txt; }
 	;
 	
-compoundStm returns [ List<String> statements ]
-	: ifStm { $statements = $ifStm.statements; }
-	| caseStm { $statements = $caseStm.statements; }
-	| forStm { $statements = $forStm.statements; }
-	| whileStm { $statements = $whileStm.statements; }
+compoundStm returns [ List<String> statements, VariablesBundle vbund ]
+	: ifStm { $statements = $ifStm.statements; $vbund = $ifStm.vbund; }
+	| caseStm { $statements = $caseStm.statements; $vbund = $caseStm.vbund; }
+	| forStm { $statements = $forStm.statements; $vbund = $forStm.vbund; }
+	| whileStm { $statements = $whileStm.statements; $vbund = $whileStm.vbund; }
 	;
 
-ifStm returns [ List<String> statements ]
+ifStm returns [ List<String> statements, VariablesBundle vbund ]
+@init	{ $statements = new LinkedList<String>(); $vbund = new VariablesBundle(); }
+	: 'if' test COLON cb=codeBlock { $statements.add("IF " + $test.txt + " THEN"); $statements.addAll($cb.statements); $vbund.addAll($cb.vbund); } (ec=elifClause { $statements.addAll($ec.statements); $vbund.addAll($cb.vbund); } )*
+	('else' COLON cbE=codeBlock { $statements.add("ELSE"); $statements.addAll($cbE.statements); $vbund.addAll($cbE.vbund); $statements.add("END_IF;"); } )?
+	;
+
+elifClause returns [ List<String> statements, VariablesBundle vbund ]
 @init	{ $statements = new LinkedList<String>(); }
-	: 'if' test COLON cb=codeBlock { $statements.add("IF " + $test.txt + " THEN"); $statements.addAll($cb.statements); } (ec=elifClause { $statements.addAll($ec.statements); } )*
-	('else' COLON cbE=codeBlock { $statements.add("ELSE"); $statements.addAll($cbE.statements); $statements.add("END_IF;"); } )?
+	: 'elif' test COLON cb=codeBlock { $statements.add("ELSIF " + $test.txt + " THEN"); $statements.addAll($cb.statements); $vbund = $cb.vbund; }
 	;
 
-elifClause returns [ List<String> statements ]
-@init	{ $statements = new LinkedList<String>(); }
-	: 'elif' test COLON cb=codeBlock { $statements.add("ELSIF " + $test.txt + " THEN"); $statements.addAll($cb.statements); }
-	;
-
-caseStm returns [ List<String> statements ]
+caseStm returns [ List<String> statements, VariablesBundle vbund ]
 @init	{ $statements = new LinkedList<String>(); }
 	: 'case' test COLON NEWLINE INDENT caseElementsStm DEDENT
 	{
 	$statements.add("CASE " + $test.txt + " OF");
-	$statements.addAll($caseElementsStm.statements);
+	$statements.addAll($caseElementsStm.statements); $vbund = $caseElementsStm.vbund;
 	$statements.add("END_CASE;");
 	}
 	;
   
-caseElementsStm returns [ List<String> statements ]
-@init	{ $statements = new LinkedList<String>(); }
-	: ( test COLON cb1=codeBlock { $statements.add($test.txt + ":"); $statements.addAll($cb1.statements); } )+
-	'default' COLON cbd=codeBlock { $statements.add("ELSE"); $statements.addAll($cbd.statements); }
+caseElementsStm returns [ List<String> statements, VariablesBundle vbund ]
+@init	{ $statements = new LinkedList<String>(); $vbund = new VariablesBundle(); }
+	: ( test COLON cbN=codeBlock { $statements.add($test.txt + ":"); $statements.addAll($cbN.statements); $vbund.addAll($cbN.vbund); } )+
+	'default' COLON cbd=codeBlock { $statements.add("ELSE"); $statements.addAll($cbd.statements); $vbund.addAll($cbd.vbund); }
 	;
 
-forStm returns [ List<String> statements ]
+forStm returns [ List<String> statements, VariablesBundle vbund ]
 @init	{ $statements = new LinkedList<String>(); }
 	: 'for' ID (t=trailer)? (ame=arrayModifierEl)?'in' LCURLY start=test ':' step=test ':' stop=test RCURLY COLON codeBlock
 	{
 	$statements.add("FOR " + $ID.text + (t == null?"":$t.txt) + (ame == null?"":$ame.txt) + " := " + $start.txt + " TO " + $stop.txt + " BY " + $step.txt + " DO");  
-	$statements.addAll($codeBlock.statements);
+	$statements.addAll($codeBlock.statements); $vbund = $codeBlock.vbund; 
 	$statements.add("END_FOR;");
 	}
 	;
   
-whileStm returns [ List<String> statements ]
+whileStm returns [ List<String> statements, VariablesBundle vbund ]
 @init	{ $statements = new LinkedList<String>(); }
 	: 'while' test COLON codeBlock
 	{
 	$statements.add("WHILE " + $test.txt + " DO");
-	$statements.addAll($codeBlock.statements);
+	$statements.addAll($codeBlock.statements); $vbund = $codeBlock.vbund; 
 	$statements.add("END_WHILE;");
 	}
 	;
 
-repeatUntilStm returns [ List<String> statements ]
+repeatUntilStm returns [ List<String> statements, VariablesBundle vbund ]
 @init	{ $statements = new LinkedList<String>(); }
 	: 'repeat' COLON codeBlock 'until' test
 	{
 	$statements.add("REPEAT");
-	$statements.addAll($codeBlock.statements);
+	$statements.addAll($codeBlock.statements); $vbund = $codeBlock.vbund; 
 	$statements.add("UNTIL " + $test.txt);
 	$statements.add("END_REPEAT;");
 	}
 	;
 
-codeBlock returns [ VariablesBundle vb, List<String> statements, List<String> inVars, List<String> outVars, List<String> inoutVars, List<String> locVars  ]
-@init	{
-	$statements = new LinkedList<String>();
-	$inVars = new LinkedList<String>();
-	$outVars = new LinkedList<String>();
-	$inoutVars = new LinkedList<String>();
-	$locVars = new LinkedList<String>();
-	}
-	: stm=simpleStm
-	{
-	if($stm.statements != null) {
-		$statements.addAll($stm.statements);
-	}
-	if($stm.inVars != null) { $inVars.addAll($stm.inVars); }
-	if($stm.outVars != null) { $outVars.addAll($stm.outVars); }
-	if($stm.inoutVars != null) { $inoutVars.addAll($stm.inoutVars); }
-	if($stm.locVars != null) { $locVars.addAll($stm.locVars); }
-	}
-	| NEWLINE INDENT ( stms=statement {
-	if($stms.statements != null) { $statements.addAll($stms.statements); }
-		{
-	if($stms.inVars != null) { $inVars.addAll($stms.inVars); }
-	if($stms.outVars != null) { $outVars.addAll($stms.outVars); }
-	if($stms.inoutVars != null) { $inoutVars.addAll($stms.inoutVars); }
-	if($stms.locVars != null) { $locVars.addAll($stms.locVars); }
-	}
-	})+ DEDENT 
+codeBlock returns [ List<String> statements, VariablesBundle vbund  ]
+@init	{ $statements = new LinkedList<String>(); $vbund = new VariablesBundle(); }
+	: stm=simpleStm { if($stm.statements != null) {	$statements.addAll($stm.statements); $vbund.addAll($stm.vbund); }  }
+	| NEWLINE INDENT ( stms=statement { if($stms.statements != null) { $statements.addAll($stms.statements); $vbund.addAll($stms.vbund); } })+ DEDENT 
 	;
 
 test returns [ String txt]
