@@ -2,10 +2,10 @@ grammar twyncat;
 
 // TODO: Memory locations
 // TODO: Structure
-// TODO: Variables initialization
 // TODO: Type checking
-// TODO: Pointer dereference (^)
-// TODO: Retain, Persistent, Constant
+// TODO: Pointer
+// TODO: Maybe callfunct and callfuncblock must have pre-trailer
+// TODO: Typed literals
 
 options {
 	output = AST;
@@ -23,6 +23,20 @@ import java.util.LinkedList;
 }
 
 @parser::members {
+
+String currentBlock = null;
+
+public String checkFunction(String functionName, String... args) {
+	return "FOO";
+}
+
+public boolean checkType(String t1, String t2) {
+	return t1.equalsIgnoreCase(t2);
+}
+
+public String getType(String symbol) {
+	return "BAR";
+}
 
 public class VariablesBundle {
 	public List<String> inVar;
@@ -228,22 +242,36 @@ function returns [ List<String> statements ]
 	: 'func' funcN=ID ('returns' ( rts=sdt | rtu=ID ) { returnsV = true; })? ':' cb=codeBlock
 	;
 
-callFunc returns [ String txt ]
-	: ID trail=trailer? '(' ( cfb=callFuncBlockArgs | cf=callFuncArgs )? ')'
-	{ $txt = $ID.text + ($trail.txt == null?"":$trail.txt) + "(" + (cfb == null?"":$cfb.txt) + (cf == null?"":$cf.txt) + ")" + ";"; }
+callFunc returns [ String txt, String dType ]
+@init	{ StringBuilder sb = new StringBuilder(); }
+	: ID { sb.append($ID.text); } (trailer { sb.append($trailer.text); } )? '(' ( cfa=callFuncArgs )? ')'
+	{
+	$txt = sb.toString() + "(" + (cfa == null?"":$cfa.txt) + ")" + ";";
+	if(cfa != null) {
+		String[] a = new String[$cfa.argTypesList.size()];
+		$dType = checkFunction(sb.toString(),$cfa.argTypesList.toArray(a));
+	} else {
+		$dType = checkFunction(sb.toString());
+	}
+	}
 	;
 
-// TODO: Check if passed arguments are of same type of declared and exists
-callFuncBlockArgs returns [String txt]
+// TODO: Check if passed arguments are of same type of declared and exists	
+callFuncBlock returns [ String txt ]
+	: ID trail=trailer? '(' ( cfb=callFuncBlockArgs )? ')'
+	{ $txt = $ID.text + ($trail.txt == null?"":$trail.txt) + "(" + (cfb == null?"":$cfb.txt) + ")" + ";"; }
+	;
+
+callFuncBlockArgs returns [ String txt ]
 @init	{ StringBuilder sb = new StringBuilder(); }
 @after	{ $txt = sb.toString(); }
 	: ( argN1=ID trail1=trailer? '=' argV1=test { sb.append($argN1.text + ($trail1.txt == null?"":$trail1.txt) + " := " + $argV1.txt); } ( ',' argNN=ID trailN=trailer? '=' argVN=test { sb.append(", " + $argNN.text + ($trailN.txt == null?"":$trailN.txt) + " := " + $argVN.txt); } )*)? 
 	;
 	
-callFuncArgs returns [String txt]
-@init	{ StringBuilder sb = new StringBuilder(); }
+callFuncArgs returns [ String txt, List<String> argTypesList ]
+@init	{ StringBuilder sb = new StringBuilder(); $argTypesList = new LinkedList<String>(); }
 @after	{ $txt = sb.toString(); }
-	: ( argV1=test { sb.append($argV1.txt); } ( ',' argVN=test { sb.append(", " + $argVN.txt); } )*)? 
+	: ( argV1=test { sb.append($argV1.txt); $argTypesList.add($argV1.dType); } ( ',' argVN=test { sb.append(", " + $argVN.txt); $argTypesList.add($argVN.dType); } )*)? 
 	;
 
 // TODO: Add alias to types
@@ -472,8 +500,8 @@ smallStm returns [ List<String> statements, VariablesBundle vbund ]
 	;
 
 exprStm returns [ String txt ]
-	: t1=test augAssign t2=test { $txt = $t1.txt + " := " + $t1.txt + $augAssign.txt + $t2.txt + ";"; }
-	| t3=test '=' t4=test { $txt = $t3.txt + " := " + $t4.txt + ";"; }
+	: t1=test augAssign t2=test { $txt = $t1.txt + " := " + $t1.txt + $augAssign.txt + $t2.txt + ";"; checkType($t1.dType,$t2.dType); }
+	| t3=test '=' t4=test { $txt = $t3.txt + " := " + $t4.txt + ";"; checkType($t3.dType,$t4.dType); }
 	;
 	
 augAssign returns [ String txt ]
@@ -563,31 +591,33 @@ codeBlock returns [ List<String> statements, VariablesBundle vbund  ]
 	| NEWLINE INDENT ( stms=statement { if($stms.statements != null) { $statements.addAll($stms.statements); $vbund.addAll($stms.vbund); } })+ DEDENT 
 	;
 
-test returns [ String txt]
-	: orTest { $txt = $orTest.txt; }
-	;
-	
-orTest returns [ String txt ]
-@init	{ StringBuilder sb = new StringBuilder(); }
-@after	{ $txt = sb.toString();	}
-	: and1=andTest { sb.append($and1.txt); } ('or' andN=andTest { sb.append(" OR " + $andN.txt); })*
+test returns [ String txt, String dType ]
+	: orTest { $txt = $orTest.txt; $dType = $orTest.dType; }
 	;
 
-andTest returns [ String txt ]
+orTest returns [ String txt, String dType ]
 @init	{ StringBuilder sb = new StringBuilder(); }
 @after	{ $txt = sb.toString();	}
-	: not1=notTest { sb.append($not1.txt); } ('and' notN=notTest { sb.append(" AND " + $notN.txt); })*
+	: and1=andTest { sb.append($and1.txt); $dType = $and1.dType; }
+	('or' andN=andTest { sb.append(" OR " + $andN.txt); $dType = checkFunction("OR",$and1.dType,$andN.dType); })*
 	;
 
-notTest returns [ String txt ]
-	: 'not' nt=notTest { $txt = "NOT " + $nt.txt; }
-	| comparison { $txt = $comparison.txt; }
-	;
-	
-comparison returns [ String txt ]
+andTest returns [ String txt, String dType ]
 @init	{ StringBuilder sb = new StringBuilder(); }
 @after	{ $txt = sb.toString();	}
-	: ex1=expr { sb.append($ex1.txt); } (compOperator exN=expr { sb.append(" " + $compOperator.txt + " " + $exN.txt + " "); })*
+	: not1=notTest { sb.append($not1.txt); $dType = $not1.dType; }
+	('and' notN=notTest { sb.append(" AND " + $notN.txt); $dType = checkFunction("AND",$not1.dType,$notN.dType); })*
+	;
+
+notTest returns [ String txt, String dType ]
+	: 'not' nt=notTest { $txt = "NOT " + $nt.txt; $dType = checkFunction("NOT",$nt.dType); }
+	| comparison { $txt = $comparison.txt; $dType = $comparison.dType; }
+	;
+
+comparison returns [ String txt, String dType ]
+@init	{ StringBuilder sb = new StringBuilder(); }
+@after	{ $txt = sb.toString();	}
+	: ex1=expr { sb.append($ex1.txt); $dType = $ex1.dType; } (compOperator exN=expr { sb.append(" " + $compOperator.txt + " " + $exN.txt + " "); checkType($ex1.dType,$exN.dType); $dType = "BOOL"; })*
 	;
 	
 compOperator returns [ String txt ]
@@ -599,71 +629,73 @@ compOperator returns [ String txt ]
 	| '<>' { $txt = "<>"; }
 	| '!=' { $txt = new String("<>"); }
 	;
-	
-expr returns [ String txt ]
+
+expr returns [ String txt, String dType ]
 @init	{ StringBuilder sb = new StringBuilder(); }
 @after	{ $txt = sb.toString();	}
-	: xor1=xorExpr { sb.append($xor1.txt); } ('|' xorN=xorExpr { sb.append(" OR " + $xorN.txt); } )*
+	: xor1=xorExpr { sb.append($xor1.txt); $dType = $xor1.dType; } ('|' xorN=xorExpr { sb.append(" OR " + $xorN.txt); $dType = checkFunction("OR",$xor1.dType,$xorN.dType); } )*
 	;
 
-xorExpr returns [ String txt ]
+xorExpr returns [ String txt, String dType ]
 @init	{ StringBuilder sb = new StringBuilder(); }
 @after	{ $txt = sb.toString();	}
-	: and1=andExpr { sb.append($and1.txt); } ('^' andN=andExpr { sb.append(" XOR " + $andN.txt); } )*
+	: and1=andExpr { sb.append($and1.txt); $dType = $and1.dType; } ('^' andN=andExpr { sb.append(" XOR " + $andN.txt); $dType = checkFunction("XOR",$and1.dType,$andN.dType); } )*
 	;
 	
-andExpr returns [ String txt ]
+andExpr returns [ String txt, String dType ]
 @init	{ StringBuilder sb = new StringBuilder(); }
 @after	{ $txt = sb.toString();	}
-	: shi1=shiftExpr { sb.append($shi1.txt); } ('&' shiN=shiftExpr { sb.append(" AND " + $shiN.txt); } )*
+	: shi1=shiftExpr { sb.append($shi1.txt); $dType = $shi1.dType; } ('&' shiN=shiftExpr { sb.append(" AND " + $shiN.txt); $dType = checkFunction("AND",$shi1.dType,$shiN.dType); } )*
 	;
 	
-shiftExpr returns [ String txt ]
+shiftExpr returns [ String txt, String dType ]
 @init	{ StringBuilder sb = new StringBuilder(); }
 @after	{ $txt = sb.toString();	}
-	: aril=arithExpr '<<' ariL=arithExpr { sb.append("SHL(" + $aril.txt + ", " + $ariL.txt + ")"); }
-	| arir=arithExpr '>>' ariR=arithExpr { sb.append("SHR(" + $arir.txt + ", " + $ariR.txt + ")"); }
-	| ari=arithExpr { sb.append($ari.txt); }
+	: aril=arithExpr '<<' ariL=arithExpr { sb.append("SHL(" + $aril.txt + ", " + $ariL.txt + ")"); $dType = checkFunction("SHL",$aril.dType,$ariL.dType); }
+	| arir=arithExpr '>>' ariR=arithExpr { sb.append("SHR(" + $arir.txt + ", " + $ariR.txt + ")"); $dType = checkFunction("SHR",$arir.dType,$ariR.dType); }
+	| ari=arithExpr { sb.append($ari.txt); $dType = $ari.dType; }
+	;
+
+arithExpr returns [ String txt, String dType ]
+@init	{ StringBuilder sb = new StringBuilder(); String funN = null; }
+@after	{ $txt = sb.toString();	}
+	: t1=term { sb.append($t1.txt); $dType = $t1.dType; } (('+' { sb.append(" + "); funN = "ADD"; } |'-' { sb.append(" - "); funN = "SUB"; }) tN=term { sb.append($tN.txt); $dType = checkFunction(funN,$t1.dType,$tN.dType); })*
 	;
 	
-arithExpr returns [ String txt ]
-@init	{ StringBuilder sb = new StringBuilder(); }
+term returns [ String txt, String dType ]
+@init	{ StringBuilder sb = new StringBuilder(); String funN = null; }
 @after	{ $txt = sb.toString();	}
-	: t1=term { sb.append($t1.txt); } (('+' { sb.append(" + "); } |'-' { sb.append(" - "); }) tN=term { sb.append($tN.txt); })*
-	;
-	
-term returns [ String txt ]
-@init	{ StringBuilder sb = new StringBuilder(); }
-@after	{ $txt = sb.toString();	}
-	: f1=factor { sb.append($f1.txt); } (('*' { sb.append(" * "); } | '/' { sb.append(" / "); } | '%' { sb.append(" MOD "); }) fN=factor { sb.append($fN.txt); })*
+	: f1=factor { sb.append($f1.txt); $dType = $f1.dType; } (('*' { sb.append(" * "); funN = "MUL"; } | '/' { sb.append(" / ");  funN = "DIV"; } | '%' { sb.append(" MOD ");  funN = "MOD"; }) fN=factor { sb.append($fN.txt); $dType = checkFunction(funN,$f1.dType,$fN.dType); })*
 	;
 		
-factor returns [ String txt ]
+factor returns [ String txt, String dType ]
 @init	{ StringBuilder sb = new StringBuilder(); }
 @after	{ $txt = sb.toString();	}
-	: ('+' { sb.append("+"); } |'-' { sb.append("-"); })? power { sb.append($power.txt); }
+	: ('+' { sb.append("+"); } |'-' { sb.append("-"); })? power { sb.append($power.txt); $dType = $power.dType; }
 	;
 	
 
-power returns [ String txt ]
+power returns [ String txt, String dType ]
 @init	{ StringBuilder sb = new StringBuilder(); }
 @after	{ 
 	if(fac == null){
-		sb.append($atp.txt);
+		sb.append($atp.txt); $dType = $atp.dType;
 	} else {
-		sb.append("EXPT(" + $atp.txt + ", " + $fac.txt + ")");
+		sb.append("EXPT(" + $atp.txt + ", " + $fac.txt + ")"); $dType = checkFunction("EXPT",$atp.dType,$fac.dType);
 	}
 	$txt = sb.toString();
 	}
 	: atp=atom ('**' fac=factor)?
 	;
 	
-atom returns [ String txt ]
-@init	{ StringBuilder sb = new StringBuilder(); }
+atom returns [ String txt, String dType ]
+@init	{ StringBuilder sb = new StringBuilder(); StringBuilder atomS = new StringBuilder(); }
 @after	{ $txt = sb.toString();	}
-	: ID { sb.append($ID.text); } (trailer { sb.append($trailer.txt); })? (arrayModifierEl { sb.append($arrayModifierEl.txt); })?
-	| literal { sb.append($literal.txt); }
-	| '(' test ')' { sb.append("( " + $test.txt + " )"); }
+	: ID { sb.append($ID.text); atomS.append($ID.text); } (trailer { sb.append($trailer.txt); atomS.append($trailer.txt);  })?
+	(arrayModifierEl { sb.append($arrayModifierEl.txt); atomS.append("[]"); })? { $dType = getType(atomS.toString()); }
+	| literal { sb.append($literal.txt); $dType = $literal.dType; } // | typedLiteral
+	| '(' test ')' { sb.append("( " + $test.txt + " )"); $dType = $test.dType; }
+	| callFunc { sb.append($callFunc.txt); $dType = $callFunc.dType; }
 	;
 	
 arrayModifierEl returns [ String txt ]
@@ -681,19 +713,19 @@ trailer returns [ String txt ]
 	: ('.' ID { sb.append("." + $ID.text); })+
 	;
 
-literal returns [ String txt ]
-  : DECIMALL { $txt = $DECIMALL.text; }
-  | HEXDIGITS { $txt = "16#" + $HEXDIGITS.text.substring(2); }
-  | FLOATINGPOINTL { $txt = $FLOATINGPOINTL.text; }
-  | BINDIGITS { $txt = "2#" + $BINDIGITS.text.substring(2); }
-  | OCTDIGITS { $txt = "8#" + $OCTDIGITS.text.substring(2); }
-  | timeL { $txt = $timeL.txt; }
-  | todL { $txt = $todL.txt; }
-  | dateL { $txt = $dateL.txt; }
-  | datetimeL { $txt = $datetimeL.txt; }
-  | booleanL { $txt = $booleanL.txt; }
-  | CHARACTERL { $txt = $CHARACTERL.text; }
-  | stringL { $txt = $stringL.txt; }
+literal returns [ String txt, String dType ]
+  : DECIMALL { $txt = $DECIMALL.text; $dType = "DINT"; } // Best type should be matched
+  | HEXDIGITS { $txt = "16#" + $HEXDIGITS.text.substring(2); $dType = "DWORD"; } // Best type should be matched
+  | FLOATINGPOINTL { $txt = $FLOATINGPOINTL.text; $dType = "REAL"; } // Best type should be matched
+  | BINDIGITS { $txt = "2#" + $BINDIGITS.text.substring(2); $dType = "BYTE"; } //
+  | OCTDIGITS { $txt = "8#" + $OCTDIGITS.text.substring(2); $dType = "BYTE"; }
+  | timeL { $txt = $timeL.txt; $dType = "TIME"; }
+  | todL { $txt = $todL.txt; $dType = "TOD"; }
+  | dateL { $txt = $dateL.txt; $dType = "DATE"; }
+  | datetimeL { $txt = $datetimeL.txt; $dType = "DT"; }
+  | booleanL { $txt = $booleanL.txt; $dType = "BOOL"; }
+  | CHARACTERL { $txt = $CHARACTERL.text; $dType = "BYTE"; }
+  | stringL { $txt = $stringL.txt; $dType = "STRING"; }
   ;
 
 FLOATINGPOINTL
