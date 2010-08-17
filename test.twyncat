@@ -2,6 +2,12 @@ pointer.int myPointer, mySecondPointer, myThirdPointer
 pointer.int x
 enum.myEnum = {mon = 1,tue,wed,thu,fri,sat,sun}
 
+structure myStruct:
+	bool valoreBooleano
+	int contatore
+	real realPart
+	real imaginaryPart
+
 func myfunct:
 	in.int par6, par7 = 11, par9 = 66, stringa = 1001
 	out.int array[1:10]= [1,2,3,4,5,6,7,8,9,10], array2[1:4] = [1,2,3,4]
@@ -27,7 +33,7 @@ func functionThatReturnsBool returns bool:
 	anotherOutput = 10.4
 
 prog test:
-	in.int par6, par7 = 11, par9 = 66, stringa = 1001
+	in.int par6, par7 = 11, par9 = 66, stringa = CONCAT("pippo","pluto")
 	out.int array[1:10]= [1,2,3,4,5,6,7,8,9,10], array2[1:4] = [1,2,3,4]
 	in.int arrayZ[1:10][2:30][3:20]
 	in.bool par1, par2, par3

@@ -10,7 +10,7 @@ public class Structure implements Component {
 	HashMap<String,Field> fields;
 	
 	public Structure(String name) {
-		this.name = name;
+		this.name = name.toLowerCase();
 		this.fields = new HashMap<String,Field>();
 	}
 
@@ -24,7 +24,7 @@ public class Structure implements Component {
 			throw new FieldExistsException(n + " in " + this.name);
 		} else {
 			Field f;
-			f = new Field(n, type);
+			f = new Field(n.toLowerCase(), type.toLowerCase());
 			fields.put(f.getName(), f);
 		}
 	}

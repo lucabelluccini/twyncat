@@ -6,6 +6,8 @@ grammar twyncat;
 // TODO: Pointer
 // TODO: Maybe callfunct and callfuncblock must have pre-trailer
 // TODO: Typed literals
+// TODO: FunctionBlock must be defined
+// TODO:
 
 options {
 	output = AST;
@@ -25,17 +27,42 @@ import java.util.LinkedList;
 @parser::members {
 
 String currentBlock = null;
+boolean inStructure = false;
 
 public String checkFunction(String functionName, String... args) {
+	System.err.println("Checking function '" + functionName + "' passing " + args.length + " parameters.");
 	return "FOO";
 }
 
 public boolean checkType(String t1, String t2) {
+	System.err.println("Checking types: '" + t1 + "' vs '" + t2 + "'");
 	return t1.equalsIgnoreCase(t2);
 }
 
 public String getType(String symbol) {
+	System.err.println("Getting Type of symbol '" + symbol + "'");
 	return "BAR";
+}
+
+public void declare(String var, String type) {
+	System.err.println("Variable '" + var + "' of type '" + type + "' declared.");
+}
+
+public void declareLocal(String scope, String var, String type) {
+	System.err.println("Local Variable '" + var + "' of type '" + type + "' declared.");
+}
+
+public class Structure {
+	String name;
+	
+	public Structure(String st) {
+		name = st;
+		System.err.println("Structure name '" + st + "'");
+	}
+	
+	public void addField(String n, String t) {
+		System.err.println("Structure '" + name + "', field: '" + n + "' of type '" + t + "'");
+	}
 }
 
 public class VariablesBundle {
@@ -208,7 +235,7 @@ program returns [ List<String> statements ]
 	if($cb.vbund.inoutVarP.size() > 0) { $statements.add("VAR_IN_OUT PERSISTENT"); $statements.addAll($cb.vbund.inoutVarP); $statements.add("END_VAR"); }
 	$statements.addAll($cb.statements);
 	}
-	: 'prog' pn=ID ':' cb=codeBlock
+	: 'prog' pn=ID { currentBlock = $pn.text; } ':' cb=codeBlock 
 	;
 
 function returns [ List<String> statements ]
@@ -239,7 +266,7 @@ function returns [ List<String> statements ]
 	if($cb.vbund.inoutVarP.size() > 0) { $statements.add("VAR_IN_OUT PERSISTENT"); $statements.addAll($cb.vbund.inoutVarP); $statements.add("END_VAR"); }
 	$statements.addAll($cb.statements);
 	}
-	: 'func' funcN=ID ('returns' ( rts=sdt | rtu=ID ) { returnsV = true; })? ':' cb=codeBlock
+	: 'func' funcN=ID { currentBlock = $funcN.text; } ('returns' ( rts=sdt | rtu=ID ) { returnsV = true; })? ':' cb=codeBlock
 	;
 
 callFunc returns [ String txt, String dType ]
@@ -279,7 +306,7 @@ alias returns [ String txt ]
 	: 'alias' ID '=' exprStm
 	{ $txt = "TYPE " + $ID.text + ":" + $exprStm.txt + "; " + "END_TYPE"; }
 	;
-
+// TODO: Add subrange to types
 subrange returns [ String txt ]
 	: 'subrange' '.' subrangeType ID '=' lb=literal ':' ub=literal
 	{ $txt = "TYPE " + $ID.text + " : " + $subrangeType.txt + "( " + $lb.txt + ".." + $ub.txt + " ) END_TYPE;"; }
@@ -294,7 +321,7 @@ pointer	returns [ List<String> statements ]
 	;
 
 // TODO: Add enumeration to types
-// TODO: (maybe) Error checking will be not supported
+// TODO: Error checking will be not supported
 enumeration returns [ String txt ]
 	: 'enum' '.' en=ID '=' LCURLY enumerationElementList RCURLY
 	{ $txt = "TYPE " + $en.text + ":(" + $enumerationElementList.txt + "); END_TYPE"; }
@@ -328,8 +355,8 @@ fragment subrangeType returns [ String txt ]
 	;
 
 structure returns [ List<String> statements ]
-@init	{ $statements = new LinkedList<String>(); }
-	: 'structure' ID COLON NEWLINE INDENT se=structureElement DEDENT
+@init	{ $statements = new LinkedList<String>(); Structure s = null; }
+	: 'structure' ID COLON { s = new Structure($ID.text); } NEWLINE INDENT se=structureElement[ s ] DEDENT
 	{
 	$statements.add("TYPE " + $ID.text + " :");
 	$statements.add("STRUCT");
@@ -339,22 +366,34 @@ structure returns [ List<String> statements ]
 	}
 	;
 	
-structureElement returns [ List<String> statements ]
+structureElement [ Structure struct ] returns [ List<String> statements ]
 @init	{ $statements = new LinkedList<String>(); }
-	: ((sT=sdt | uT=ID) varList[ (sT == null?"":$sT.txt) + ($uT.text == null?"":$uT.text) + "" ] NEWLINE)+
-	{
-	$statements.addAll($varList.statements);
-	}
+	: ((sT=sdt | uT=ID) structureElementList[ (sT == null?"":$sT.txt) + ($uT.text == null?"":$uT.text) + "", $struct ] NEWLINE)+
+	{ $statements.addAll($structureElementList.statements); }
+	;
+	
+structureElementList[ String type, Structure struct ] returns [ List<String> statements ]
+@init	{ $statements = new LinkedList<String>(); }
+	: vle1=structureField[ $type, $struct ] { if($vle1.txt != null) { $statements.add($vle1.txt); } } (',' vleN=structureField[ $type, $struct ] { if($vleN.txt != null) { $statements.add($vleN.txt); } })*
+	;
+
+fragment structureField [ String vType, Structure struct ] returns [ String txt ]
+@init	{ StringBuilder sb = new StringBuilder(); StringBuilder sbVar = new StringBuilder(); }
+@after	{ $txt = sb.toString() + ";"; $struct.addField(sbVar.toString(), $vType); }
+	: ID { sb.append($ID.text); sbVar.append($ID.text); } (trailer { sb.append($trailer.txt); sbVar.append($trailer.txt); })?
+	( { sb.append(" ARRAY"); } arrayModifier { sb.append($arrayModifier.txt); sb.append(" OF " + $vType); sbVar.append("[]"); } ('=' ace=arrayConstantExpression { sb.append(" := " + $ace.txt); })?  
+	| ( '[' strl=DECIMALL ']' )? ('=' t=test )? { sb.append(" : " + $vType + ($strl == null?"":"("+$strl.text+")") + (t == null?"":" := " + $t.txt)); })?
 	;
 
 // OUT = 0; IN = 1; INOUT = 2; LOC= 3;
-definition returns [ VariablesBundle vbund ]
+definition returns [ List<String> statements, VariablesBundle vbund ]
 @init	{ List<String> definitions; $vbund = new VariablesBundle(); }
 @after	{
+	$statements = $vlist.initializations;
 	definitions = $vlist.statements;
 	int purpose = 3, modifier = 0;
 	if(dp != null) { purpose = $dp.pID; }
-	if(dm != null) { modifier = $dm.mID; }
+	if(dm != null) { modifier = $dm.mID; }	
 	switch(purpose){
 		case 0: // Output
 			switch(modifier) {
@@ -395,7 +434,7 @@ definition returns [ VariablesBundle vbund ]
 		default: break;
 	}
 	}
-	: dp=defPurpose? dm=defModifier? (sT=sdt | uT=ID) vlist=varList[ (sT == null?"":$sT.txt) + ($uT.text == null?"":$uT.text) + "" ]
+	: dp=defPurpose? dm=defModifier? (sT=sdt | uT=ID) vlist=varList[ (sT == null?"":$sT.txt) + ($uT == null?"":$uT.text) , (dp == null) ]
 	;
 
 defPurpose returns [ int pID ]
@@ -408,20 +447,20 @@ defModifier returns [ int mID ]
 	
 globaldefinition returns [ List<String> statements ]
 @after	{ $statements = $vlist.statements; }
-	: (( 'config' | 'global' ) DOT )? (( 'persistent' | 'retain' | 'constant') DOT )? (sT=sdt | uT=ID) vlist=varList[ (sT == null?"":$sT.txt) + ($uT.text == null?"":$uT.text) + "" ]
+	: (( 'config' | 'global' ) DOT )? (( 'persistent' | 'retain' | 'constant') DOT )? (sT=sdt | uT=ID) vlist=varList[ (sT == null?"":$sT.txt) + ($uT.text == null?"":$uT.text) + "" , false ]
 	;
 
-varList [ String type ] returns [ List<String> statements ]
-@init	{ $statements = new LinkedList<String>(); }
-	: vle1=varListElem[ $type ] { if($vle1.txt != null) { $statements.add($vle1.txt); } } (',' vleN=varListElem[ $type ] { if($vleN.txt != null) { $statements.add($vleN.txt); } })*
+varList [ String type, boolean isLocal ] returns [ List<String> statements, List<String> initializations ]
+@init	{ $statements = new LinkedList<String>(); $initializations = new LinkedList<String>(); }
+	: vle1=varListElem[ $type, $isLocal ] { if($vle1.txt != null) { $statements.add($vle1.txt); } if($vle1.initialization != null) { $initializations.add($vle1.initialization); } } (',' vleN=varListElem[ $type, $isLocal ] { if($vleN.txt != null) { $statements.add($vleN.txt); } if($vleN.initialization != null) { $initializations.add($vleN.initialization); } })*
 	;
 
-fragment varListElem [ String vType ] returns [ String txt ]
-@init	{ StringBuilder sb = new StringBuilder(); }
-@after	{ $txt = sb.toString() + ";"; }
-	: ID { sb.append($ID.text); } (trailer { sb.append($trailer.txt); })?
-	( { sb.append(" ARRAY"); } arrayModifier { sb.append($arrayModifier.txt); sb.append(" OF " + $vType); } ('=' ace=arrayConstantExpression { sb.append(" := " + $ace.txt); })?  
-	| ( '[' strl=DECIMALL ']' )? ('=' t=test )? { sb.append(" : " + $vType + ($strl == null?"":"("+$strl.text+")") + (t == null?"":" := " + $t.txt)); })?
+fragment varListElem [ String vType, boolean isLocal ] returns [ String txt, String initialization ]
+@init	{ StringBuilder sb = new StringBuilder(); StringBuilder sbVar = new StringBuilder(); StringBuilder sbInit = new StringBuilder(); boolean init = false; }
+@after	{ $txt = sb.toString() + ";"; $initialization = (init?sbInit.toString():null); if(isLocal){ declareLocal(currentBlock,sbVar.toString(),vType); } else { declare(currentBlock + "." + sbVar.toString(),vType); } } 
+	: ID { sb.append($ID.text); sbVar.append($ID.text); } (trailer { sb.append($trailer.txt); sbVar.append($trailer.txt); })? { sbInit.append(sbVar.toString()); }
+	( { sb.append(" ARRAY"); } arrayModifier { sb.append($arrayModifier.txt); sb.append(" OF " + $vType); sbVar.append("[]"); } ('=' ace=arrayConstantExpression { sb.append(" := " + $ace.txt); })?  
+	| ( '[' strl=DECIMALL ']' )? ('=' t=test { init = true; } )? { sb.append(" : " + $vType + ($strl == null?"":"("+$strl.text+")")); sbInit.append((t == null?"":" := " + $t.txt)); })?
 	;
 
 arrayModifier returns [ String txt ]
@@ -481,7 +520,7 @@ smallGlobalStm returns [ List<String> statements ]
 	| pointer { $statements.addAll($pointer.statements); }
 	| enumeration { $statements.add($enumeration.txt); }
 	| globaldefinition { $statements.addAll($globaldefinition.statements); }
-	| structure //-> {$structure.st}
+	| structure { $statements.addAll($structure.statements); }
 	;
 
 simpleStm returns [ List<String> statements, VariablesBundle vbund ]
@@ -496,7 +535,7 @@ smallStm returns [ List<String> statements, VariablesBundle vbund ]
 	| flowStm { $statements.add($flowStm.txt); }
 	| repeatUntilStm { $statements.addAll($repeatUntilStm.statements); $vbund = $repeatUntilStm.vbund; }
 	| pointer
-	| d=definition { $vbund = $d.vbund; }
+	| d=definition { $statements.addAll($d.statements); $vbund = $d.vbund; }
 	;
 
 exprStm returns [ String txt ]
@@ -518,6 +557,7 @@ flowStm returns [ String txt ]
 	: 'return' { $txt = "RETURN" + ";"; }
 	| 'exit' { $txt = "EXIT" + ";"; }
 	| callFunc { $txt = $callFunc.txt; }
+	| callFuncBlock { $txt = $callFuncBlock.txt; }
 	;
 	
 compoundStm returns [ List<String> statements, VariablesBundle vbund ]
@@ -692,7 +732,7 @@ atom returns [ String txt, String dType ]
 @init	{ StringBuilder sb = new StringBuilder(); StringBuilder atomS = new StringBuilder(); }
 @after	{ $txt = sb.toString();	}
 	: ID { sb.append($ID.text); atomS.append($ID.text); } (trailer { sb.append($trailer.txt); atomS.append($trailer.txt);  })?
-	(arrayModifierEl { sb.append($arrayModifierEl.txt); atomS.append("[]"); })? { $dType = getType(atomS.toString()); }
+	(arrayModifierEl { sb.append($arrayModifierEl.txt); atomS.append("[]"); })? { $dType = getType(currentBlock + "." + atomS.toString()); }
 	| literal { sb.append($literal.txt); $dType = $literal.dType; } // | typedLiteral
 	| '(' test ')' { sb.append("( " + $test.txt + " )"); $dType = $test.dType; }
 	| callFunc { sb.append($callFunc.txt); $dType = $callFunc.dType; }
