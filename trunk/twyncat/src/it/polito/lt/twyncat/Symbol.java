@@ -4,20 +4,26 @@ public class Symbol {
 	
 	String name;
 	Component type;
-	Boolean isArray;
+	Boolean isLocal;
 	
 	public Symbol(String n, Component t) {
-		name = n;
+		name = n.toLowerCase();
 		type = t;
-		isArray = false;
+		isLocal = false;
+	}
+
+	public Symbol(String n, Component t, boolean isL) {
+		name = n.toLowerCase();
+		type = t;
+		isLocal = isL;
 	}
 
 	public String getName() {
 		return name;
 	}
 	
-	public Boolean isArray() {
-		return isArray;
+	public Boolean isLocal() {
+		return isLocal;
 	}
 	
 	public String toString() {

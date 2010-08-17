@@ -5,6 +5,7 @@ import it.polito.lt.twyncat.exceptions.StructureExistsException;
 import it.polito.lt.twyncat.exceptions.SymbolExistsException;
 import it.polito.lt.twyncat.exceptions.TypeUnknownException;
 import it.polito.lt.twyncat.exceptions.UnknownTypeException;
+import it.polito.lt.twyncat.exceptions.VariableNotAccessible;
 import it.polito.lt.twyncat.exceptions.VariableNotDeclaredException;
 
 public class TwyncatManager {
@@ -81,6 +82,9 @@ public class TwyncatManager {
 		try {
 			twy.checkVariable("var.x");
 		} catch (VariableNotDeclaredException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (VariableNotAccessible e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
