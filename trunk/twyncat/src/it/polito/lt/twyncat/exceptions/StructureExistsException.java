@@ -4,7 +4,6 @@ public class StructureExistsException extends Exception{
 	private static final long serialVersionUID = 2140719441732286784L;
 	String message;
 	
-
 	public StructureExistsException() {
 		message = "Unknown";
 	}

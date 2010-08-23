@@ -368,8 +368,7 @@ structure returns [ List<String> statements ]
 	
 structureElement [ Structure struct ] returns [ List<String> statements ]
 @init	{ $statements = new LinkedList<String>(); }
-	: ((sT=sdt | uT=ID) structureElementList[ (sT == null?"":$sT.txt) + ($uT.text == null?"":$uT.text) + "", $struct ] NEWLINE)+
-	{ $statements.addAll($structureElementList.statements); }
+	: ((sT=sdt | uT=ID) structureElementList[ ($sT.txt == null?"":$sT.txt) + ($uT.text == null?"":$uT.text) + "", $struct ] NEWLINE { $statements.addAll($structureElementList.statements); } )+
 	;
 	
 structureElementList[ String type, Structure struct ] returns [ List<String> statements ]
@@ -377,6 +376,7 @@ structureElementList[ String type, Structure struct ] returns [ List<String> sta
 	: vle1=structureField[ $type, $struct ] { if($vle1.txt != null) { $statements.add($vle1.txt); } } (',' vleN=structureField[ $type, $struct ] { if($vleN.txt != null) { $statements.add($vleN.txt); } })*
 	;
 
+// FIXME: Accepts test, should accept constants and literals
 fragment structureField [ String vType, Structure struct ] returns [ String txt ]
 @init	{ StringBuilder sb = new StringBuilder(); StringBuilder sbVar = new StringBuilder(); }
 @after	{ $txt = sb.toString() + ";"; $struct.addField(sbVar.toString(), $vType); }
@@ -385,7 +385,6 @@ fragment structureField [ String vType, Structure struct ] returns [ String txt 
 	| ( '[' strl=DECIMALL ']' )? ('=' t=test )? { sb.append(" : " + $vType + ($strl == null?"":"("+$strl.text+")") + (t == null?"":" := " + $t.txt)); })?
 	;
 
-// OUT = 0; IN = 1; INOUT = 2; LOC= 3;
 definition returns [ List<String> statements, VariablesBundle vbund ]
 @init	{ List<String> definitions; $vbund = new VariablesBundle(); }
 @after	{
