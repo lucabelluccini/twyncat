@@ -1,12 +1,12 @@
 package it.polito.lt.twyncat;
 
-import it.polito.lt.twyncat.exceptions.UnknownTypeException;
+import it.polito.lt.twyncat.exceptions.TypeUnknownException;
 
 public class Field {
 	String name;
 	Component type;
 	
-	public Field(String n, String type) throws UnknownTypeException {
+	public Field(String n, String type) throws TypeUnknownException {
 		this.name = n;
 		// Check if type is in types keys
 		if(Twyncat.getType(type) != null) {
@@ -19,7 +19,7 @@ public class Field {
 			this.type = Twyncat.getStructure(type);
 			return;
 		}
-		throw new UnknownTypeException(type);
+		throw new TypeUnknownException(type);
 	}
 
 	public String getName() {

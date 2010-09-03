@@ -1,13 +1,9 @@
 grammar twyncat;
 
 // TODO: Memory locations
-// TODO: Structure
-// TODO: Type checking
 // TODO: Pointer
-// TODO: Maybe callfunct and callfuncblock must have pre-trailer
 // TODO: Typed literals
-// TODO: FunctionBlock must be defined
-// TODO:
+// TODO: Global variables definitions
 
 options {
 	output = AST;
@@ -238,6 +234,8 @@ program returns [ List<String> statements ]
 	: 'prog' pn=ID { currentBlock = $pn.text; } ':' cb=codeBlock 
 	;
 
+
+// TODO: If function_block, add it to types
 function returns [ List<String> statements ]
 @init	{ $statements = new LinkedList<String>(); Boolean returnsV = false; }
 @after	{
@@ -370,13 +368,13 @@ structureElement [ Structure struct ] returns [ List<String> statements ]
 @init	{ $statements = new LinkedList<String>(); }
 	: ((sT=sdt | uT=ID) structureElementList[ ($sT.txt == null?"":$sT.txt) + ($uT.text == null?"":$uT.text) + "", $struct ] NEWLINE { $statements.addAll($structureElementList.statements); } )+
 	;
-	
+
 structureElementList[ String type, Structure struct ] returns [ List<String> statements ]
 @init	{ $statements = new LinkedList<String>(); }
 	: vle1=structureField[ $type, $struct ] { if($vle1.txt != null) { $statements.add($vle1.txt); } } (',' vleN=structureField[ $type, $struct ] { if($vleN.txt != null) { $statements.add($vleN.txt); } })*
 	;
 
-// FIXME: Accepts test, should accept constants and literals
+// FIXME: accepts test, should accept constants and literals
 fragment structureField [ String vType, Structure struct ] returns [ String txt ]
 @init	{ StringBuilder sb = new StringBuilder(); StringBuilder sbVar = new StringBuilder(); }
 @after	{ $txt = sb.toString() + ";"; $struct.addField(sbVar.toString(), $vType); }
@@ -385,6 +383,7 @@ fragment structureField [ String vType, Structure struct ] returns [ String txt 
 	| ( '[' strl=DECIMALL ']' )? ('=' t=test )? { sb.append(" : " + $vType + ($strl == null?"":"("+$strl.text+")") + (t == null?"":" := " + $t.txt)); })?
 	;
 
+// TODO: pointer and memory addresses are not supported
 definition returns [ List<String> statements, VariablesBundle vbund ]
 @init	{ List<String> definitions; $vbund = new VariablesBundle(); }
 @after	{
@@ -443,11 +442,13 @@ defPurpose returns [ int pID ]
 defModifier returns [ int mID ]
 	: ( 'persistent' { $mID = 2; } | 'retain' { $mID = 1; } | 'constant' { $mID = 3; } ) DOT 
 	;
-	
+
+/*
 globaldefinition returns [ List<String> statements ]
 @after	{ $statements = $vlist.statements; }
 	: (( 'config' | 'global' ) DOT )? (( 'persistent' | 'retain' | 'constant') DOT )? (sT=sdt | uT=ID) vlist=varList[ (sT == null?"":$sT.txt) + ($uT.text == null?"":$uT.text) + "" , false ]
 	;
+*/
 
 varList [ String type, boolean isLocal ] returns [ List<String> statements, List<String> initializations ]
 @init	{ $statements = new LinkedList<String>(); $initializations = new LinkedList<String>(); }
@@ -513,12 +514,13 @@ globalStm returns [ List<String> statements ]
 	: smallGlobalStm (SEMI)? NEWLINE { $statements = $smallGlobalStm.statements; }
 	;
 
+// TODO: pointer and globaldefinition are not supported
 smallGlobalStm returns [ List<String> statements ]
 @init	{ $statements = new LinkedList<String>(); }
 	: alias { $statements.add($alias.txt); }
-	| pointer { $statements.addAll($pointer.statements); }
+/*	| pointer { $statements.addAll($pointer.statements); } */
 	| enumeration { $statements.add($enumeration.txt); }
-	| globaldefinition { $statements.addAll($globaldefinition.statements); }
+/*	| globaldefinition { $statements.addAll($globaldefinition.statements); } */
 	| structure { $statements.addAll($structure.statements); }
 	;
 
@@ -526,14 +528,13 @@ simpleStm returns [ List<String> statements, VariablesBundle vbund ]
 	: smallStm (SEMI)? NEWLINE { $statements = $smallStm.statements; $vbund = $smallStm.vbund; }
 	;
 
-// TODO: check if statements is null !
-// TODO: pointer
+// TODO: pointer is not supported
 smallStm returns [ List<String> statements, VariablesBundle vbund ]
 @init	{ $statements = new LinkedList<String>(); }
 	: exprStm { $statements.add($exprStm.txt); }
 	| flowStm { $statements.add($flowStm.txt); }
 	| repeatUntilStm { $statements.addAll($repeatUntilStm.statements); $vbund = $repeatUntilStm.vbund; }
-	| pointer
+/*	| pointer */
 	| d=definition { $statements.addAll($d.statements); $vbund = $d.vbund; }
 	;
 

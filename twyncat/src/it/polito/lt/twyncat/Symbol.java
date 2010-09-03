@@ -17,6 +17,10 @@ public class Symbol {
 		type = t;
 		isLocal = isL;
 	}
+	
+	public String getType() {
+		return type.getName();
+	}
 
 	public String getName() {
 		return name;
