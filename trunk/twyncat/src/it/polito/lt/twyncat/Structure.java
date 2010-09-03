@@ -1,7 +1,7 @@
 package it.polito.lt.twyncat;
 
 import it.polito.lt.twyncat.exceptions.FieldExistsException;
-import it.polito.lt.twyncat.exceptions.UnknownTypeException;
+import it.polito.lt.twyncat.exceptions.TypeUnknownException;
 
 import java.util.HashMap;
 
@@ -18,7 +18,7 @@ public class Structure implements Component {
 		return name;
 	}
 	
-	public void addField(String n, String type) throws FieldExistsException, UnknownTypeException {
+	public void addField(String n, String type) throws FieldExistsException, TypeUnknownException {
 		// Check if name is in fields
 		if (fields.containsKey(n)) {
 			throw new FieldExistsException(n + " in " + this.name);

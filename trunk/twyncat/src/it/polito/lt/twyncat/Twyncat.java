@@ -4,7 +4,6 @@ import it.polito.lt.twyncat.exceptions.FieldExistsException;
 import it.polito.lt.twyncat.exceptions.StructureExistsException;
 import it.polito.lt.twyncat.exceptions.SymbolExistsException;
 import it.polito.lt.twyncat.exceptions.TypeUnknownException;
-import it.polito.lt.twyncat.exceptions.UnknownTypeException;
 import it.polito.lt.twyncat.exceptions.VariableNotAccessible;
 import it.polito.lt.twyncat.exceptions.VariableNotDeclaredException;
 
@@ -22,12 +21,13 @@ public class Twyncat {
 	static HashMap<String,Structure> structures = null;
 	static HashMap<String,Type> types = null;
 	static HashMap<String,Symbol> symbols = null;
-
+	static HashMap<String,Function> functions = null;
 	
 	private Twyncat(){
 		structures = new HashMap<String, Structure>();
 		types = new HashMap<String,Type>();
 		symbols = new HashMap<String,Symbol>();
+		functions = new HashMap<String,Function>();
 		File fT = new File("H:\\types");
 		File fS = new File("H:\\structures");
 		File fF = new File("H:\\functions");
@@ -76,15 +76,19 @@ public class Twyncat {
 			input = new BufferedReader(new FileReader(f));
 			String line = null;
 			while (( line = input.readLine()) != null) {
-				StringTokenizer st = new StringTokenizer(line, "->");
-				Structure s = new Structure(st.nextToken().trim());
-				st.nextToken(" ");
-				while(st.hasMoreTokens() && (st.countTokens() >= 2)){
-					String fieldName = st.nextToken().trim();
-					String fieldType = st.nextToken().trim();
-					s.addField(fieldName, fieldType);
+				StringTokenizer st = new StringTokenizer(line, " ");
+				Type outT = getType(st.nextToken().trim());
+				Function func = new Function(st.nextToken().trim());
+				func.setOut(outT);
+				while(st.hasMoreTokens()){
+					// temp st.nextToken().trim()
+					// temp == "any" ?
+						// 
+					// temp == "any*" ?
+						//
+					Type argX = getType(st.nextToken().trim());
+					func.addArg(argX);
 				}
-				structures.put(s.getName(), s);
 			}
 		} catch (FileNotFoundException e1) {
 			// TODO Auto-generated catch block
@@ -92,14 +96,8 @@ public class Twyncat {
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		} catch (FieldExistsException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (UnknownTypeException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
 		}
-		System.out.println("Known Functions: " + structures.size());
+		System.out.println("Known Functions: " + functions.size());
 	}	
 	
 	private void initStructures(File f) {
@@ -127,7 +125,7 @@ public class Twyncat {
 		} catch (FieldExistsException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		} catch (UnknownTypeException e) {
+		} catch (TypeUnknownException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
@@ -146,7 +144,7 @@ public class Twyncat {
 	}
 	
 	public void declareType(String type) {
-		Type t = new Type(type);
+		Type t = new Type(type.toLowerCase());
 		types.put(t.getName(), t);
 	}
 	
@@ -158,8 +156,9 @@ public class Twyncat {
 		}
 	}
 	
-	public void declare(String n, String type) throws SymbolExistsException, TypeUnknownException {
+	public void declare(String n, String typeC) throws SymbolExistsException, TypeUnknownException {
 		// Check if name is in symbols keys
+		String type = typeC.toLowerCase();
 		if(symbols.containsKey(n)) {
 			throw new SymbolExistsException(n);
 		} else {
@@ -214,9 +213,9 @@ public class Twyncat {
 		}
 	}
 	
-	void checkVariable(String name) throws VariableNotDeclaredException, VariableNotAccessible {
+	public String checkVariable(String name) throws VariableNotDeclaredException, VariableNotAccessible {
 		if(symbols.containsKey(name)) {
-			return;
+			return symbols.get(name).getType();
 		} else {
 			String unscopedName = name.substring(name.indexOf("."));
 			if(symbols.containsKey(unscopedName)){
@@ -224,11 +223,11 @@ public class Twyncat {
 				if(s.isLocal()){
 					throw new VariableNotAccessible(s.getName());
 				}
-				return;
+				return s.getType();
 			} else {
 				throw new VariableNotDeclaredException(name);
 			}
 		}
-	}
+		}
 }
  

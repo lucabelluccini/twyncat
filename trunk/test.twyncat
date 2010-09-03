@@ -1,5 +1,3 @@
-pointer.int myPointer, mySecondPointer, myThirdPointer
-pointer.int x
 enum.myEnum = {mon = 1,tue,wed,thu,fri,sat,sun}
 
 structure myStruct:
@@ -26,7 +24,7 @@ func myfunct:
 	in.int par4, par5
 	out.real anotherOutput
 	anotherOutput = 10.4
-	
+
 func functionThatReturnsBool returns bool:
 	anotherOutput = 10.4
 	anotherOutput = 10.4
