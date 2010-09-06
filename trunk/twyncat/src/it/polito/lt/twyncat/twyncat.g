@@ -3,7 +3,7 @@ grammar twyncat;
 options {
 	//output = template;
 	//rewrite = true;
-	output = AST;
+	//output = AST;
 	backtrack = true;
 }
 
@@ -13,9 +13,11 @@ tokens {
 }
 
 @parser::header {
+package it.polito.lt.twyncat;
 }
 
 @lexer::header {
+package it.polito.lt.twyncat;
 import java.util.LinkedList;
 }
 
@@ -120,7 +122,8 @@ alias	:
 	'alias' ID '=' exprStm	
 	;
 
-pointer	: 'pointer' '.' t=(SDT | ID)  n+=ID (',' n+=ID)*
+pointer	:
+	'pointer' '.' (SDT | ID)  ID (',' ID)*
 	;
 
 // TODO: init at value ID = 3, ID2 = 7...
@@ -141,7 +144,7 @@ structure
 
 // TODO within : arrays, structures, strings (and respective initializations)
 definition :
-	(( 'in' | 'out' | 'inout' ) DOT )? (( 'persistent' | 'retain' | 'constant') DOT )? (SDT | ID) varList
+	(( 'in' | 'out' | 'inout' ) DOT )? (( 'persistent' | 'retain' | 'constant') DOT )? (SDT | ID) varList  { System.out.println("ASD " + $start); }
 	;
 
 globaldefinition 
@@ -165,7 +168,7 @@ arrayModifier
 	;
 
 arrayRange
-	: l=DECIMALL ':' h=DECIMALL
+	: l=DECIMALL ':' h=DECIMALL // -> arrayRange(low={$l.text},high={$h.text}) // When more TOKENS appear in a Parser Rule, it is necessary to label them, removing ambiguities
 	; 
 
 // === Array Constant Expression ===
@@ -205,7 +208,7 @@ globalStm
 
 smallGlobalStm
 	: alias
-	| pointer 
+	| pointer
 	| enumeration
 	| globaldefinition
 	| structure
@@ -288,8 +291,6 @@ forStm
 whileStm
   : 'while' test COLON codeBlock
   ;
-  catch[MismatchedTokenException MTe] { reportError(MTe); throw MTe; }
-  catch[NoViableAltException NVAe] { throw NVAe; }
 
 repeatUntilStm
   : 'repeat' COLON codeBlock 'until' test
@@ -304,7 +305,6 @@ codeBlock
 test
   : orTest
   ;
-  catch[NoViableAltException NVAe] { throw NVAe; }
 
 orTest	:
 	andTest ('or' andTest)*

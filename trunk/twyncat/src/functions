@@ -1,0 +1,35 @@
+int INDEXOF nameofpou
+int SIZEOF any
+any SHL any any
+any SHR any any
+any ROL any any
+any ADD any any
+any ROR any any
+any SEL bool any any
+any MAX any any
+MIN any any
+LIMIT any any any
+MUX int any*
+dword ADR any 
+int TRUNC real
+any ABS any
+any SQRT any
+any LN any
+any LOG any
+any EXP any
+SIN any
+COS any
+TAN any
+ASIN any
+ACOS any
+ATAN any
+EXPT any int
+int LEN string
+string LEFT string int
+string RIGHT string int
+string MID string int int
+string CONCAT string string
+INSERT string string int
+DELETE string int int
+REPLACE string string int int  
+bool FIND string string

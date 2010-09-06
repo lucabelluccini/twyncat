@@ -28,9 +28,9 @@ public class Twyncat {
 		types = new HashMap<String,Type>();
 		symbols = new HashMap<String,Symbol>();
 		functions = new HashMap<String,Function>();
-		File fT = new File("H:\\types");
-		File fS = new File("H:\\structures");
-		File fF = new File("H:\\functions");
+		File fT = new File("\\.\\types");
+		File fS = new File("\\.\\structures");
+		File fF = new File("\\.\\functions");
 		initTypes(fT);
 		initStructures(fS);
 	}
