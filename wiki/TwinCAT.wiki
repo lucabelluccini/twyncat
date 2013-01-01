@@ -264,7 +264,7 @@ LEFT(str, size)			Left inital string of given size of string str
 RIGHT(str, size)		Right initial string of given size of string str 
 MID(str, len, pos)		Partial string of str of given length 
 CONCAT(str1, str2)		Concatenation of two subsequent strings standard.lib 
-INSERT(str1, str2, pos)		Insert string str1 in String str2 at position pos 
+INSERT(str1, str2, pos)		Insert string str2 in string str1 at position pos 
 DELETE(str1, len, pos)		Delete partial string (length len), start at pos of str1
 REPLACE(str1,str2,len,pos)	Repl. partial string of len by str2, start at pos of str1  
 FIND(str1, str2)		Search for partial string str2 in str1 
