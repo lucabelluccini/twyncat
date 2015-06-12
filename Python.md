@@ -1,0 +1,76 @@
+# Introduction #
+
+Python is a high-level programming language whose design philosophy emphasizes code readability.
+Its use of indentation for block delimiters is unusual among popular programming languages.
+Python is strongly typed, no non explicit conversion are made.
+It also implements structures such as lists, tuples, and sets.
+
+# Details on syntax #
+
+There are some Python usage examples and more details in the following links
+  * [CodeSyntax](http://codesyntax.netfirms.com/lang-python.htm)
+  * [Wikipedia](http://en.wikipedia.org/wiki/Python_(programming_language))
+  * [Python Website](http://www.python.org/)
+  * [Wikipedia](http://en.wikipedia.org/wiki/Python_syntax_and_semantics)
+  * [rigaux](http://rigaux.org/language-study/syntax-across-languages-per-language/Python.html)
+
+# Parsing Python #
+
+Lexer rules can force the lexer to emit more token per rule invocation by manually invoking method emit( ).
+This feature solves some fairly difficult problems such as inserting imaginary tokens (tokens for which there is no input counterpart).
+This is necessary for lexing Python.
+Because Python uses indentation to indicate code blocks, there are no explicit begin and end tokens to group statements within a block. For example, in the following Python code, the `if` statement and the method call to `g( )` are at the same outer level. The print statement and method call to `f( )` are the same inner, nested level.
+
+```
+if foo:
+        print "foo is true"
+        f()
+g()
+```
+
+Without begin and end tokens, parsing this input presents a problem for the parser when it tries to group statements. The lexer needs to emit imaginary INDENT and DEDENT tokens to indicate the begin and end of code blocks. The token sequence must be as follows:
+
+```
+IF ID : NL INDENT PRINT STRINGLITERAL NL ID ( ) NL DEDENT ID ( ) NL
+```
+
+The parser rule for matching code blocks would look like this:
+
+```
+block : INDENT statement+ DEDENT ;
+```
+
+The lexer can emit the INDENT token when it sees whitespace that is more deeply indented than the previous statement's whitespace; however, there is no input character to trigger the DEDENT token. In fact, the lexer must emit a DEDENT token when it sees less indentation than the previous statement. The lexer might even have to emit multiple DEDENT
+tokens depending on how far out the indentation has moved from the previous statement.
+
+```
+INDENT  : 
+        // turn on rule only if at left edge
+        {getCharPositionInLine()==0}? =>
+        (' ' |'\t' )+ {
+                if ( 'indentation-bigger-than-before' ) {
+                        // can only indent one level at a time
+                        emit('INDENT-token');
+                        'track increased indentation'
+                } else if ( 'indentation-smaller-than-before' ) {
+                        int d = 'current-depth' - 'previous-depth';
+                        // back out of d code blocks
+                        for (int i=1; i<=d; i++) {
+                                emit('DEDENT-token');
+                        }
+                        'reduce indentation'
+                }
+        };
+```
+
+After matching a lexer rule, if you have not emitted a token manually in
+an action, `nextToken( )` will emit a token for you. The token is based upon
+the text and token type for the rule. Note that, for efficiency reasons, the
+`CommonTokenStream` class does not support multiple token emissions.
+It is necessary to implement a queue of tokens instead a single variable for a token.
+
+# Few details about parsing Python #
+
+The following [website](http://effbot.org/zone/simple-top-down-parsing.htm) explains in detail how to parse Python.
+
+[Python 2.6 Language Reference](http://docs.python.org/release/2.6.4/reference/index.html) contains all the rules of the language.
